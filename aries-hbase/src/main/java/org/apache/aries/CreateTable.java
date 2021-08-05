@@ -63,6 +63,8 @@ public class CreateTable extends AbstractHBaseToy {
       IntParameter.newBuilder("ct.table_split_size_in_megabytes").setDescription("The MAX_FILESIZE of a table, larger than this will trigger split.").opt();
   private final Parameter<Boolean> sensitive_data =
       BoolParameter.newBuilder("ct.sensitive_data", false).setDescription("Whether the table stores sensitive data").opt();
+  private final Parameter<String[]> other_attributes =
+      StringArrayParameter.newBuilder("ct.other_attributes").setDescription("Other attributes, separated by ','").opt();
   // Column family parameters
   // Following are optionals
   private final Parameter<Enum> compression =
@@ -112,6 +114,7 @@ public class CreateTable extends AbstractHBaseToy {
     requisites.add(table_owners);
     requisites.add(table_split_size);
     requisites.add(sensitive_data);
+    requisites.add(other_attributes);
     // Family parameters
     requisites.add(compression);
     requisites.add(cache_data_on_write);
@@ -160,6 +163,7 @@ public class CreateTable extends AbstractHBaseToy {
     example(split_algorithm.key(), "HEX");
     example(hex_split_regions.key(), "4");
     example(table_owners.key(), "foo");
+    example(other_attributes.key(), "team=abc,project=whatever");
     example(compression.key() + ".a", "SNAPPY");
     example(cache_data_on_write.key() + ".a", "true");
     example(cache_data_in_L1.key() + ".a", "true");
@@ -179,6 +183,14 @@ public class CreateTable extends AbstractHBaseToy {
     descriptor.setValue(Bytes.toBytes("TABLE_OWNERS"), Bytes.toBytes(table_owners.value()));
     if (sensitive_data.value()) {
       descriptor.setValue(Bytes.toBytes("SENSITIVE_DATA"), Bytes.toBytes("TRUE"));
+    }
+    if (!other_attributes.empty()) {
+      String[] other_attrs = other_attributes.value();
+      for (String attr : other_attrs) {
+        String[] kv = attr.split("=");
+        if (kv.length != 2) continue;
+        descriptor.setValue(Bytes.toBytes(kv[0].toUpperCase()), Bytes.toBytes(kv[1]));
+      }
     }
     return descriptor;
   }
