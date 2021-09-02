@@ -112,22 +112,7 @@ public class RegionsMover extends AbstractHBaseToy {
         break;
       }
       case RELOAD: {
-        if (batch_move.value()) {{
-          for (int i = 0; i < size; i++) {
-            source = findServer(source_servers.value()[i]);
-            target = findServer(target_servers.value()[i]);
-            regions = ProtobufUtil.getOnlineRegions(HConnectionManager.getConnection(connection.getConfiguration()).getAdmin(source));
-            LOG.info("There are " + regions.size() + " regions on " + source);
-            unloadRegionsTo(regions, target);
-          }
-          promptForConfirm();
-          for (int i = 0; i < size; i++) {
-            source = findServer(source_servers.value()[i]);
-            target = findServer(target_servers.value()[i]);
-            regions = ProtobufUtil.getOnlineRegions(HConnectionManager.getConnection(connection.getConfiguration()).getAdmin(target));
-            reloadRegionsTo(regions, source);
-          }
-        }
+        if (batch_move.value()) {
           for (int i = 0; i < size; i++) {
             source = findServer(source_servers.value()[i]);
             target = findServer(target_servers.value()[i]);
