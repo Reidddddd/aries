@@ -36,18 +36,18 @@ public class TestToyParameters {
     ToyParameters.parse(new String[] { "--toy", "WhateverToy" });
   }
 
-  @Test(expected = ArrayIndexOutOfBoundsException.class)
+  @Test(expected = IllegalArgumentException.class)
   public void testIncompleteToyArgument() {
     ToyParameters.parse(new String[] { "--toy" });
   }
 
-  @Test(expected = ArrayIndexOutOfBoundsException.class)
+  @Test(expected = IllegalArgumentException.class)
   public void testIncompleteConfDirArgument() {
     ToyParameters.parse(new String[] { "--conf_dir" });
   }
 
   @Test public void testHelp() {
-    ToyParameters para = ToyParameters.parse(new String[] { "--help", "--toy", "WhateverToy" });
+    ToyParameters para = ToyParameters.parse(new String[] { "--help", "--conf_dir", ".", "--toy", "WhateverToy" });
     Assert.assertTrue(para.needHelp());
   }
 

@@ -71,22 +71,26 @@ public final class ToyParameters {
       else if (args[i].equals("--toy")) {
            if (++i == args.length) {
              System.out.println(USAGE);
-             System.exit(1);
+             throw new IllegalArgumentException("Missing value for --toy");
            }
            toy_name = args[i];
       }
       else if (args[i].equals("--conf_dir")) {
            if (++i == args.length) {
              System.out.println(USAGE);
-             System.exit(1);
+             throw new IllegalArgumentException("Missing value for --conf_dir");
            }
            conf_dir = args[i];
       }
     }
 
-    if (toy_name.equals(Constants.UNSET_STRING) || conf_dir.equals(Constants.UNSET_STRING)) {
+    if (toy_name.equals(Constants.UNSET_STRING)) {
       System.out.println(USAGE);
-      System.exit(1);
+      throw new IllegalArgumentException("Missing --toy argument");
+    }
+    if (conf_dir.equals(Constants.UNSET_STRING)) {
+      System.out.println(USAGE);
+      throw new IllegalArgumentException("Missing --conf_dir argument");
     }
     return new ToyParameters(need_help, toy_name, conf_dir);
   }
