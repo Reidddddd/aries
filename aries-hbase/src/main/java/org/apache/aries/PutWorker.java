@@ -16,16 +16,15 @@
 
 package org.apache.aries;
 
+import org.apache.aries.common.BaseHandler;
 import org.apache.aries.common.EnumParameter;
-import org.apache.aries.common.ToyUtils;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.aries.common.KEY_PREFIX;
+import org.apache.aries.common.VALUE_KIND;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.BufferedMutator;
 import org.apache.hadoop.hbase.client.BufferedMutatorParams;
-import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.aries.common.Constants;
@@ -35,8 +34,6 @@ import org.apache.aries.common.Parameter;
 import org.apache.aries.common.StringParameter;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -73,14 +70,6 @@ public class PutWorker extends AbstractHBaseToy {
       EnumParameter.newBuilder("pw.key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
                    .setDescription("Key prefix type: NONE, HEX, DEC.").opt();
 
-  enum VALUE_KIND {
-    RANDOM, FIXED
-  }
-
-  enum KEY_PREFIX {
-    NONE, DEC, HEX
-  }
-
   private Admin admin;
   private ExecutorService service;
   private volatile boolean running = true;
@@ -89,7 +78,6 @@ public class PutWorker extends AbstractHBaseToy {
   private VALUE_KIND kind;
   private KEY_PREFIX key_prefix;
   private AtomicLong totalRows = new AtomicLong(0);
-  private MessageDigest digest;
 
   @Override
   protected void requisite(List<Parameter> requisites) {
@@ -99,6 +87,7 @@ public class PutWorker extends AbstractHBaseToy {
     requisites.add(buffer_size);
     requisites.add(running_time);
     requisites.add(value_kind);
+    requisites.add(key_length);
     requisites.add(key_kind);
   }
 
@@ -124,9 +113,9 @@ public class PutWorker extends AbstractHBaseToy {
     }
 
     service = Executors.newFixedThreadPool(num_connections.value());
-    Worker[] workers = new Worker[num_connections.value()];
+    BaseHandler[] workers = new PutHandler[num_connections.value()];
     for (int i = 0; i < num_connections.value(); i++) {
-      workers[i] = new Worker(configuration);
+      workers[i] = new PutHandler(configuration);
       service.submit(workers[i]);
     }
 
@@ -155,8 +144,6 @@ public class PutWorker extends AbstractHBaseToy {
 
     kind = (VALUE_KIND) value_kind.value();
     key_prefix = (KEY_PREFIX) key_kind.value();
-
-    digest = MessageDigest.getInstance("MD5");
   }
 
   @Override
@@ -182,19 +169,12 @@ public class PutWorker extends AbstractHBaseToy {
     return "pw";
   }
 
-  class Worker implements Runnable {
+  class PutHandler extends BaseHandler {
 
-    Connection connection;
     long numberOfRows;
 
-    Worker(ToyConfiguration conf) throws IOException {
-      connection = createConnection(conf);
-      LOG.info("Connection created " + connection);
-    }
-
-    Connection createConnection(ToyConfiguration conf) throws IOException {
-      Configuration hbase_conf = ConfigurationFactory.createHBaseConfiguration(conf);
-      return ConnectionFactory.createConnection(hbase_conf);
+    PutHandler(ToyConfiguration conf) throws IOException {
+      super(conf);
     }
 
     @Override
@@ -205,8 +185,8 @@ public class PutWorker extends AbstractHBaseToy {
       try {
         mutator = connection.getBufferedMutator(param);
         while (running) {
-          String k = getKey();
-          byte[] value = getValue(k);
+          String k = getKey(key_prefix, key_length.value());
+          byte[] value = getValue(kind, k);
           Put put = new Put(Bytes.toBytes(k));
           put.addColumn(
               Bytes.toBytes(family.value()),
@@ -222,35 +202,6 @@ public class PutWorker extends AbstractHBaseToy {
         LOG.warning("Error occured " + e.getMessage());
       } finally {
         totalRows.addAndGet(numberOfRows);
-      }
-    }
-
-    private String getKey() {
-      String key = ToyUtils.generateRandomString(key_length.value());
-      switch (key_prefix) {
-        case HEX: {
-          byte[] digested = digest.digest(Bytes.toBytes(key));
-          String md5 = new BigInteger(1, digested).toString(16).toLowerCase();
-          return md5.substring(0, 2) + ":" + key;
-        }
-        case DEC: {
-          byte[] digested = digest.digest(Bytes.toBytes(key));
-          String md5 = new BigInteger(1, digested).toString(10).toLowerCase();
-          return md5.substring(md5.length() - 2) + ":" + key;
-        }
-        case NONE: {
-          return key;
-        }
-        default:
-          throw new IllegalStateException("Unexpected value: " + key_prefix);
-      }
-    }
-
-    private byte[] getValue(String key) {
-      switch (kind) {
-        case FIXED:  return ToyUtils.generateBase64Value(key);
-        case RANDOM: return Bytes.toBytes(ToyUtils.generateRandomString(22));
-        default:     return Bytes.toBytes(ToyUtils.generateRandomString(22));
       }
     }
 

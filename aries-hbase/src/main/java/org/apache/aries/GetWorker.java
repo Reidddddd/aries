@@ -16,29 +16,23 @@
 
 package org.apache.aries;
 
+import org.apache.aries.common.BaseHandler;
 import org.apache.aries.common.Constants;
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.IntParameter;
-import org.apache.aries.common.LongParameter;
+import org.apache.aries.common.KEY_PREFIX;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.StringParameter;
-import org.apache.aries.common.ToyUtils;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.aries.common.VALUE_KIND;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.BufferedMutator;
-import org.apache.hadoop.hbase.client.BufferedMutatorParams;
-import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Timer;
@@ -72,14 +66,6 @@ public class GetWorker extends AbstractHBaseToy {
   private final Parameter<Enum> key_kind =
       EnumParameter.newBuilder("gw.key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
                    .setDescription("Key prefix type: NONE, HEX, DEC.").opt();
-
-  enum VALUE_KIND {
-    RANDOM, FIXED
-  }
-
-  enum KEY_PREFIX {
-    NONE, DEC, HEX
-  }
 
   private Admin admin;
   private ExecutorService service;
@@ -125,9 +111,9 @@ public class GetWorker extends AbstractHBaseToy {
     }
 
     service = Executors.newFixedThreadPool(num_connections.value());
-    Worker[] workers = new Worker[num_connections.value()];
+    BaseHandler[] workers = new GetHandler[num_connections.value()];
     for (int i = 0; i < num_connections.value(); i++) {
-      workers[i] = new Worker(configuration);
+      workers[i] = new GetHandler(configuration);
       service.submit(workers[i]);
     }
 
@@ -156,8 +142,6 @@ public class GetWorker extends AbstractHBaseToy {
 
     kind = (VALUE_KIND) value_kind.value();
     key_prefix = (KEY_PREFIX) key_kind.value();
-
-    digest = MessageDigest.getInstance("MD5");
   }
 
   @Override
@@ -184,25 +168,18 @@ public class GetWorker extends AbstractHBaseToy {
   }
 
   @Override protected String getParameterPrefix() {
-    return "pw";
+    return "gw";
   }
 
-  class Worker implements Runnable {
+  class GetHandler extends BaseHandler {
 
-    Connection connection;
     long empty_get;
     long effective_get;
     long correct_get;
     long wrong_get;
 
-    Worker(ToyConfiguration conf) throws IOException {
-      connection = createConnection(conf);
-      LOG.info("Connection created " + connection);
-    }
-
-    Connection createConnection(ToyConfiguration conf) throws IOException {
-      Configuration hbase_conf = ConfigurationFactory.createHBaseConfiguration(conf);
-      return ConnectionFactory.createConnection(hbase_conf);
+    GetHandler(ToyConfiguration conf) throws IOException {
+      super(conf);
     }
 
     @Override
@@ -210,7 +187,7 @@ public class GetWorker extends AbstractHBaseToy {
       try {
         Table target_table = connection.getTable(table);
         while (running) {
-          String key = getKey();
+          String key = getKey(key_prefix, key_length.value());
           Get get = new Get(Bytes.toBytes(key));
           get.addColumn(
               Bytes.toBytes(family.value()),
@@ -222,7 +199,13 @@ public class GetWorker extends AbstractHBaseToy {
           } else {
             effective_get++;
             byte[] value = result.getValue(Bytes.toBytes(family.value()), Bytes.toBytes("q"));
-            verifiedResult(kind, key, value);
+            if (kind == VALUE_KIND.FIXED) {
+              if (verifiedResult(kind, key, value)) {
+                correct_get++;
+              } else {
+                wrong_get++;
+              }
+            }
           }
         }
       } catch (IOException e) {
@@ -232,40 +215,6 @@ public class GetWorker extends AbstractHBaseToy {
         empty_read.addAndGet(empty_get);
         correct_read.addAndGet(correct_get);
         wrong_read.addAndGet(empty_get);
-      }
-    }
-
-    private String getKey() {
-      String key = ToyUtils.generateRandomString(key_length.value());
-      switch (key_prefix) {
-        case HEX: {
-          byte[] digested = digest.digest(Bytes.toBytes(key));
-          String md5 = new BigInteger(1, digested).toString(16).toLowerCase();
-          return md5.substring(0, 2) + ":" + key;
-        }
-        case DEC: {
-          byte[] digested = digest.digest(Bytes.toBytes(key));
-          String md5 = new BigInteger(1, digested).toString(10).toLowerCase();
-          return md5.substring(md5.length() - 2) + ":" + key;
-        }
-        case NONE: {
-          return key;
-        }
-        default:
-          throw new IllegalStateException("Unexpected value: " + key_prefix);
-      }
-    }
-
-    private void verifiedResult(VALUE_KIND kind, String key, byte[] value) {
-      if (kind == VALUE_KIND.RANDOM) {
-        return;
-      }
-
-      int res = Bytes.compareTo(value, ToyUtils.generateBase64Value(key));
-      if (res == 0) {
-        correct_get++;
-      } else {
-        wrong_get++;
       }
     }
 
