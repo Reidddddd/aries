@@ -97,6 +97,9 @@ public abstract class BaseWorker extends AbstractHBaseToy {
       throw new TableNotFoundException(table);
     }
 
+    kind = (VALUE_KIND) value_kind.value();
+    key_prefix = (KEY_PREFIX) key_kind.value();
+
     service = Executors.newFixedThreadPool(num_connections.value());
     BaseHandler[] workers = new BaseHandler[num_connections.value()];
     for (int i = 0; i < num_connections.value(); i++) {
@@ -126,9 +129,6 @@ public abstract class BaseWorker extends AbstractHBaseToy {
         }
       }, 0);
     }
-
-    kind = (VALUE_KIND) value_kind.value();
-    key_prefix = (KEY_PREFIX) key_kind.value();
   }
 
   @Override
