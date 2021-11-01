@@ -91,8 +91,6 @@ public abstract class BaseWorker extends AbstractHBaseToy {
     example(key_kind.key(), "NONE");
   }
 
-  protected abstract BaseHandler[] createHandlerArray(int num);
-
   protected abstract BaseHandler createHandler(ToyConfiguration configuration) throws IOException;
 
   @Override
@@ -105,7 +103,7 @@ public abstract class BaseWorker extends AbstractHBaseToy {
     }
 
     service = Executors.newFixedThreadPool(num_connections.value());
-    BaseHandler[] workers = createHandlerArray(num_connections.value());
+    BaseHandler[] workers = new BaseHandler[num_connections.value()];
     for (int i = 0; i < num_connections.value(); i++) {
       workers[i] = createHandler(configuration);
       service.submit(workers[i]);

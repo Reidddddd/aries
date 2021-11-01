@@ -55,11 +55,6 @@ public class PutWorker extends BaseWorker {
   }
 
   @Override
-  protected BaseHandler[] createHandlerArray(int num) {
-    return new PutHandler[num];
-  }
-
-  @Override
   protected int haveFun() throws Exception {
     super.haveFun();
     LOG.info("Total wrote " + totalRows.get() + " rows in " + running_time.value() + " seconds.");

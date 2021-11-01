@@ -34,11 +34,6 @@ public class GetWorker extends BaseWorker {
   private final AtomicLong wrong_read = new AtomicLong(0);
 
   @Override
-  protected BaseHandler[] createHandlerArray(int num) {
-    return new GetHandler[num];
-  }
-
-  @Override
   protected BaseHandler createHandler(ToyConfiguration configuration) throws IOException {
     return new GetHandler(configuration);
   }

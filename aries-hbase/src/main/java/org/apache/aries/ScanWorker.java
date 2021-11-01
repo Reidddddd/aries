@@ -30,11 +30,6 @@ import java.io.IOException;
 public class ScanWorker extends BaseWorker {
 
   @Override
-  protected BaseHandler[] createHandlerArray(int num) {
-    return new ScanHandler[num];
-  }
-
-  @Override
   protected BaseHandler createHandler(ToyConfiguration configuration) throws IOException {
     return new ScanHandler(configuration);
   }
@@ -42,18 +37,6 @@ public class ScanWorker extends BaseWorker {
   @Override
   protected String getParameterPrefix() {
     return "sw";
-  }
-
-  @Override
-  protected int haveFun() throws Exception {
-    super.haveFun();
-    return 0;
-  }
-
-  @Override
-  protected void destroyToy() throws Exception {
-    super.destroyToy();
-    admin.close();
   }
 
   class ScanHandler extends BaseHandler {
