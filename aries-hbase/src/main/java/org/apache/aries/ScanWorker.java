@@ -27,13 +27,14 @@ import org.apache.aries.common.VALUE_KIND;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.util.Pair;
 
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -42,30 +43,30 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class GetWorker extends AbstractHBaseToy {
+public class ScanWorker extends AbstractHBaseToy {
 
   private final Parameter<Integer> num_connections =
-      IntParameter.newBuilder("gw.num_connections").setRequired()
-                  .setDescription("Number of connections used for get")
-                  .addConstraint(v -> v > 0).opt();
+      IntParameter.newBuilder("sw.num_connections").setRequired()
+          .setDescription("Number of connections used for scan")
+          .addConstraint(v -> v > 0).opt();
   private final Parameter<String> table_name =
-      StringParameter.newBuilder("gw.target_table").setRequired()
-                     .setDescription("A table that data will be read").opt();
+      StringParameter.newBuilder("sw.target_table").setRequired()
+          .setDescription("A table that data will be scanned").opt();
   private final Parameter<String> family =
-      StringParameter.newBuilder("gw.target_family")
-                     .setDescription("A family that belongs to the target_table, and wanted to be read")
-                     .setRequired().opt();
+      StringParameter.newBuilder("sw.target_family")
+          .setDescription("A family that belongs to the target_table, and wanted to be read")
+          .setRequired().opt();
   private final Parameter<Integer> running_time =
-      IntParameter.newBuilder("gw.running_time").setDescription("How long this application run (in seconds").opt();
+      IntParameter.newBuilder("sw.running_time").setDescription("How long this application run (in seconds").opt();
   private final Parameter<Enum> value_kind =
-      EnumParameter.newBuilder("gw.value_kind", VALUE_KIND.FIXED, VALUE_KIND.class)
-                   .setDescription("After the value read, it will be used to verify the result").opt();
+      EnumParameter.newBuilder("sw.value_kind", VALUE_KIND.FIXED, VALUE_KIND.class)
+          .setDescription("After the value read, it will be used to verify the result").opt();
   private final Parameter<Integer> key_length =
-      IntParameter.newBuilder("gw.key_length").setDefaultValue(Constants.DEFAULT_KEY_LENGTH_PW)
-                  .setDescription("The length of the generated key in bytes.").opt();
+      IntParameter.newBuilder("sw.key_length").setDefaultValue(Constants.DEFAULT_KEY_LENGTH_PW)
+          .setDescription("The length of the generated key in bytes.").opt();
   private final Parameter<Enum> key_kind =
-      EnumParameter.newBuilder("gw.key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
-                   .setDescription("Key prefix type: NONE, HEX, DEC.").opt();
+      EnumParameter.newBuilder("sw.key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
+          .setDescription("Key prefix type: NONE, HEX, DEC.").opt();
 
   private Admin admin;
   private ExecutorService service;
@@ -80,19 +81,25 @@ public class GetWorker extends AbstractHBaseToy {
   private AtomicLong wrong_read = new AtomicLong(0);
 
   @Override
+  protected String getParameterPrefix() {
+    return "sw";
+  }
+
+  @Override
   protected void requisite(List<Parameter> requisites) {
     requisites.add(num_connections);
     requisites.add(table_name);
     requisites.add(family);
     requisites.add(running_time);
     requisites.add(value_kind);
+    requisites.add(key_length);
     requisites.add(key_kind);
   }
 
   @Override
   protected void exampleConfiguration() {
     example(num_connections.key(), "3");
-    example(table_name.key(), "table:for_put");
+    example(table_name.key(), "table:for_scan");
     example(family.key(), "f");
     example(running_time.key(), "300");
     example(value_kind.key(), "FIXED");
@@ -110,9 +117,9 @@ public class GetWorker extends AbstractHBaseToy {
     }
 
     service = Executors.newFixedThreadPool(num_connections.value());
-    BaseHandler[] workers = new GetHandler[num_connections.value()];
+    BaseHandler[] workers = new ScanHandler[num_connections.value()];
     for (int i = 0; i < num_connections.value(); i++) {
-      workers[i] = new GetHandler(configuration);
+      workers[i] = new ScanHandler(configuration);
       service.submit(workers[i]);
     }
 
@@ -166,18 +173,9 @@ public class GetWorker extends AbstractHBaseToy {
     admin.close();
   }
 
-  @Override protected String getParameterPrefix() {
-    return "gw";
-  }
+  class ScanHandler extends BaseHandler {
 
-  class GetHandler extends BaseHandler {
-
-    long empty_get;
-    long effective_get;
-    long correct_get;
-    long wrong_get;
-
-    GetHandler(ToyConfiguration conf) throws IOException {
+    ScanHandler(ToyConfiguration conf) throws IOException {
       super(conf);
     }
 
@@ -187,22 +185,24 @@ public class GetWorker extends AbstractHBaseToy {
         Table target_table = connection.getTable(table);
         while (running) {
           String key = getKey(key_prefix, key_length.value());
-          Get get = new Get(Bytes.toBytes(key));
-          get.addColumn(
-              Bytes.toBytes(family.value()),
-              Bytes.toBytes("q")
-          );
-          Result result = target_table.get(get);
-          if (result.isEmpty()) {
-            empty_get++;
-          } else {
-            effective_get++;
-            byte[] value = result.getValue(Bytes.toBytes(family.value()), Bytes.toBytes("q"));
-            if (kind == VALUE_KIND.FIXED) {
-              if (verifiedResult(kind, key, value)) {
-                correct_get++;
-              } else {
-                wrong_get++;
+          Scan scan = new Scan();
+          String k1 = getKey(key_prefix, key_length.value());
+          String k2 = getKey(key_prefix, key_length.value());
+          Pair<byte[], byte[]> boundaries = getBoundaries(k1, k2);
+          scan.addFamily(Bytes.toBytes(family.value()));
+          scan.withStartRow(boundaries.getFirst());
+          scan.withStartRow(boundaries.getSecond());
+          scan.setCacheBlocks(false);
+          scan.addColumn(Bytes.toBytes(family.value()), Bytes.toBytes("q"));
+          ResultScanner scanner = target_table.getScanner(scan);
+          for (Result result = scanner.next(); result != null; result = scanner.next()) {
+            if (result.isEmpty()) {
+            } else {
+              byte[] value = result.getValue(Bytes.toBytes(family.value()), Bytes.toBytes("q"));
+              if (kind == VALUE_KIND.FIXED) {
+                if (verifiedResult(kind, key, value)) {
+                } else {
+                }
               }
             }
           }
@@ -210,11 +210,20 @@ public class GetWorker extends AbstractHBaseToy {
       } catch (IOException e) {
         LOG.warning("Error occured " + e.getMessage());
       } finally {
-        effective_read.addAndGet(effective_get);
-        empty_read.addAndGet(empty_get);
-        correct_read.addAndGet(correct_get);
-        wrong_read.addAndGet(empty_get);
       }
+    }
+
+    private Pair<byte[], byte[]> getBoundaries(String k1, String k2) {
+      Pair<byte[], byte[]> boundaries = new Pair<>();
+      int res = Bytes.compareTo(Bytes.toBytes(k1), Bytes.toBytes(k2));
+      if (res < 0) {
+        boundaries.setFirst(Bytes.toBytes(k1));
+        boundaries.setSecond(Bytes.toBytes(k2));
+      } else {
+        boundaries.setFirst(Bytes.toBytes(k2));
+        boundaries.setSecond(Bytes.toBytes(k1));
+      }
+      return boundaries;
     }
 
   }
