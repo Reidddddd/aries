@@ -17,6 +17,7 @@
 package org.apache.aries;
 
 import org.apache.aries.common.BaseHandler;
+import org.apache.aries.common.BaseWorker;
 import org.apache.hadoop.hbase.client.BufferedMutator;
 import org.apache.hadoop.hbase.client.BufferedMutatorParams;
 import org.apache.hadoop.hbase.client.Put;

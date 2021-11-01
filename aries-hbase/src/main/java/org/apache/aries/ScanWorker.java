@@ -17,6 +17,7 @@
 package org.apache.aries;
 
 import org.apache.aries.common.BaseHandler;
+import org.apache.aries.common.BaseWorker;
 import org.apache.aries.common.VALUE_KIND;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;

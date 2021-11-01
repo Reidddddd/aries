@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package org.apache.aries;
+package org.apache.aries.common;
 
-import org.apache.aries.common.BaseHandler;
-import org.apache.aries.common.Constants;
-import org.apache.aries.common.EnumParameter;
-import org.apache.aries.common.IntParameter;
-import org.apache.aries.common.KEY_PREFIX;
-import org.apache.aries.common.Parameter;
-import org.apache.aries.common.StringParameter;
-import org.apache.aries.common.VALUE_KIND;
+import org.apache.aries.AbstractHBaseToy;
+import org.apache.aries.ToyConfiguration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Admin;
@@ -78,6 +72,7 @@ public abstract class BaseWorker extends AbstractHBaseToy {
     requisites.add(running_time);
     requisites.add(value_kind);
     requisites.add(key_kind);
+    requisites.add(key_length);
   }
 
   @Override

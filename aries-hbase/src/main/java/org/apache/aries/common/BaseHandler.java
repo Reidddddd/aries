@@ -33,17 +33,28 @@ public abstract class BaseHandler implements Runnable {
   protected static final Logger LOG = Logger.getLogger(BaseHandler.class.getName());
 
   protected Connection connection;
-  protected MessageDigest digest;
+  protected volatile MessageDigest digest;
 
   public BaseHandler(ToyConfiguration conf) throws IOException {
     connection = createConnection(conf);
     LOG.info("Connection created " + connection);
-    try {
-      digest = MessageDigest.getInstance("MD5");
-    } catch (NoSuchAlgorithmException nsae) {
-      // rarely happen
-      throw new RuntimeException(nsae.getCause());
+    digest = getDigest();
+  }
+
+  private MessageDigest getDigest() {
+    if (digest == null) {
+      synchronized (BaseHandler.class) {
+        if (digest == null) {
+          try {
+            digest = MessageDigest.getInstance("MD5");
+          } catch (NoSuchAlgorithmException nsae) {
+            // rarely happen
+            throw new RuntimeException(nsae.getCause());
+          }
+        }
+      }
     }
+    return digest;
   }
 
   Connection createConnection(ToyConfiguration conf) throws IOException {
@@ -57,19 +68,22 @@ public abstract class BaseHandler implements Runnable {
       case HEX: {
         byte[] digested = digest.digest(Bytes.toBytes(key));
         String md5 = new BigInteger(1, digested).toString(16).toLowerCase();
-        return md5.substring(0, 2) + ":" + key;
+        key = md5.substring(0, 2) + ":" + key;
+        break;
       }
       case DEC: {
         byte[] digested = digest.digest(Bytes.toBytes(key));
         String md5 = new BigInteger(1, digested).toString(10).toLowerCase();
-        return md5.substring(md5.length() - 2) + ":" + key;
+        key = md5.substring(md5.length() - 2) + ":" + key;
+        break;
       }
       case NONE: {
-        return key;
+        break;
       }
       default:
         throw new IllegalStateException("Unexpected value: " + key_prefix);
     }
+    return key;
   }
 
   protected byte[] getValue(VALUE_KIND kind, String key) {
