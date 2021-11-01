@@ -17,139 +17,35 @@
 package org.apache.aries;
 
 import org.apache.aries.common.BaseHandler;
-import org.apache.aries.common.Constants;
-import org.apache.aries.common.EnumParameter;
-import org.apache.aries.common.IntParameter;
-import org.apache.aries.common.KEY_PREFIX;
-import org.apache.aries.common.Parameter;
-import org.apache.aries.common.StringParameter;
 import org.apache.aries.common.VALUE_KIND;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.TableNotFoundException;
-import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class GetWorker extends AbstractHBaseToy {
+public class GetWorker extends BaseWorker {
 
-  private final Parameter<Integer> num_connections =
-      IntParameter.newBuilder("gw.num_connections").setRequired()
-                  .setDescription("Number of connections used for get")
-                  .addConstraint(v -> v > 0).opt();
-  private final Parameter<String> table_name =
-      StringParameter.newBuilder("gw.target_table").setRequired()
-                     .setDescription("A table that data will be read").opt();
-  private final Parameter<String> family =
-      StringParameter.newBuilder("gw.target_family")
-                     .setDescription("A family that belongs to the target_table, and wanted to be read")
-                     .setRequired().opt();
-  private final Parameter<Integer> running_time =
-      IntParameter.newBuilder("gw.running_time").setDescription("How long this application run (in seconds").opt();
-  private final Parameter<Enum> value_kind =
-      EnumParameter.newBuilder("gw.value_kind", VALUE_KIND.FIXED, VALUE_KIND.class)
-                   .setDescription("After the value read, it will be used to verify the result").opt();
-  private final Parameter<Integer> key_length =
-      IntParameter.newBuilder("gw.key_length").setDefaultValue(Constants.DEFAULT_KEY_LENGTH_PW)
-                  .setDescription("The length of the generated key in bytes.").opt();
-  private final Parameter<Enum> key_kind =
-      EnumParameter.newBuilder("gw.key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
-                   .setDescription("Key prefix type: NONE, HEX, DEC.").opt();
-
-  private Admin admin;
-  private ExecutorService service;
-  private volatile boolean running = true;
-  private TableName table;
-  private final Object mutex = new Object();
-  private VALUE_KIND kind;
-  private KEY_PREFIX key_prefix;
-  private AtomicLong effective_read = new AtomicLong(0);
-  private AtomicLong empty_read = new AtomicLong(0);
-  private AtomicLong correct_read = new AtomicLong(0);
-  private AtomicLong wrong_read = new AtomicLong(0);
+  private final AtomicLong effective_read = new AtomicLong(0);
+  private final AtomicLong empty_read = new AtomicLong(0);
+  private final AtomicLong correct_read = new AtomicLong(0);
+  private final AtomicLong wrong_read = new AtomicLong(0);
 
   @Override
-  protected void requisite(List<Parameter> requisites) {
-    requisites.add(num_connections);
-    requisites.add(table_name);
-    requisites.add(family);
-    requisites.add(running_time);
-    requisites.add(value_kind);
-    requisites.add(key_kind);
+  protected BaseHandler[] createHandlerArray(int num) {
+    return new GetHandler[num];
   }
 
   @Override
-  protected void exampleConfiguration() {
-    example(num_connections.key(), "3");
-    example(table_name.key(), "table:for_put");
-    example(family.key(), "f");
-    example(running_time.key(), "300");
-    example(value_kind.key(), "FIXED");
-    example(key_length.key(), "10");
-    example(key_kind.key(), "NONE");
-  }
-
-  @Override
-  protected void buildToy(ToyConfiguration configuration) throws Exception {
-    super.buildToy(configuration);
-    table = TableName.valueOf(table_name.value());
-    admin = connection.getAdmin();
-    if (!admin.tableExists(table)) {
-      throw new TableNotFoundException(table);
-    }
-
-    service = Executors.newFixedThreadPool(num_connections.value());
-    BaseHandler[] workers = new GetHandler[num_connections.value()];
-    for (int i = 0; i < num_connections.value(); i++) {
-      workers[i] = new GetHandler(configuration);
-      service.submit(workers[i]);
-    }
-
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      synchronized (mutex) {
-        mutex.notify();
-      }
-    }));
-
-    if (!running_time.empty()) {
-      new Timer().schedule(new TimerTask() {
-        @Override
-        public void run() {
-          try {
-            TimeUnit.SECONDS.sleep(running_time.value());
-          } catch (InterruptedException e) {
-            // Ignore
-          } finally {
-            synchronized (mutex) {
-              mutex.notify();
-            }
-          }
-        }
-      }, 0);
-    }
-
-    kind = (VALUE_KIND) value_kind.value();
-    key_prefix = (KEY_PREFIX) key_kind.value();
+  protected BaseHandler createHandler(ToyConfiguration configuration) throws IOException {
+    return new GetHandler(configuration);
   }
 
   @Override
   protected int haveFun() throws Exception {
-    synchronized (mutex) {
-      mutex.wait();
-      running = false;
-    }
-    service.awaitTermination(30, TimeUnit.SECONDS);
+    super.haveFun();
     LOG.info("Effective get " + effective_read.get() + " rows in " + running_time.value() + " seconds.");
     LOG.info("Empty get " + empty_read.get() + " in " + running_time.value() + " seconds.");
     if (kind == VALUE_KIND.FIXED) {
@@ -158,12 +54,6 @@ public class GetWorker extends AbstractHBaseToy {
     }
     LOG.info("Existing.");
     return 0;
-  }
-
-  @Override
-  protected void destroyToy() throws Exception {
-    super.destroyToy();
-    admin.close();
   }
 
   @Override protected String getParameterPrefix() {
