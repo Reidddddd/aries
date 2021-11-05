@@ -36,7 +36,7 @@ public final class ToyUtils {
     return s.substring(0, s.lastIndexOf(","));
   }
 
-  public static String RANDOM_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789ABCEDEFGHIJKLMNOPQRSTUVWXYZ";
+  private static String RANDOM_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789ABCEDEFGHIJKLMNOPQRSTUVWXYZ";
   public static String generateRandomString(int size) {
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < size; i++) {
