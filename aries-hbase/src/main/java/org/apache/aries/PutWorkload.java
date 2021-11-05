@@ -17,7 +17,7 @@
 package org.apache.aries;
 
 import org.apache.aries.common.BaseHandler;
-import org.apache.aries.common.BaseWorker;
+import org.apache.aries.common.BaseWorkload;
 import org.apache.hadoop.hbase.client.BufferedMutator;
 import org.apache.hadoop.hbase.client.BufferedMutatorParams;
 import org.apache.hadoop.hbase.client.Put;
@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class PutWorker extends BaseWorker {
+public class PutWorkload extends BaseWorkload {
 
   private final Parameter<Long> buffer_size =
       LongParameter.newBuilder("pw.buffer_size").setDefaultValue(Constants.ONE_MB)

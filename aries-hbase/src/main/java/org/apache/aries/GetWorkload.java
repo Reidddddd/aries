@@ -17,7 +17,7 @@
 package org.apache.aries;
 
 import org.apache.aries.common.BaseHandler;
-import org.apache.aries.common.BaseWorker;
+import org.apache.aries.common.BaseWorkload;
 import org.apache.aries.common.VALUE_KIND;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
@@ -27,7 +27,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class GetWorker extends BaseWorker {
+public class GetWorkload extends BaseWorkload {
 
   private final AtomicLong effective_read = new AtomicLong(0);
   private final AtomicLong empty_read = new AtomicLong(0);
@@ -99,7 +99,7 @@ public class GetWorker extends BaseWorker {
         effective_read.addAndGet(effective_get);
         empty_read.addAndGet(empty_get);
         correct_read.addAndGet(correct_get);
-        wrong_read.addAndGet(empty_get);
+        wrong_read.addAndGet(wrong_get);
       }
     }
 

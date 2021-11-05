@@ -30,9 +30,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public abstract class BaseWorker extends AbstractHBaseToy {
+public abstract class BaseWorkload extends AbstractHBaseToy {
 
-  private final Parameter<Integer> num_connections =
+  protected final Parameter<Integer> num_connections =
       IntParameter.newBuilder(getParameterPrefix() + ".num_connections").setRequired()
                   .setDescription("Number of connections used for worker")
                   .addConstraint(v -> v > 0).opt();
