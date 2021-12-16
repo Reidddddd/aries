@@ -37,7 +37,7 @@ public abstract class BaseHandler implements Runnable {
 
   public BaseHandler(ToyConfiguration conf) throws IOException {
     connection = createConnection(conf);
-    LOG.info("Connection created " + connection);
+    LOG.info("Connection created " + connection + " for " + this.getClass().getSimpleName());
     digest = getDigest();
   }
 

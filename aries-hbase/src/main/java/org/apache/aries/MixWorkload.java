@@ -28,11 +28,11 @@ import java.util.List;
 public class MixWorkload extends BaseWorkload {
 
   private final Parameter<Enum> work_load =
-      EnumParameter.newBuilder(getParameterPrefix() + ".work_load", MODE.PUT_SCAN, MODE.class).setRequired()
+      EnumParameter.newBuilder("mx.work_load", MODE.PUT_SCAN, MODE.class).setRequired()
                    .setDescription("Mix work load type. There're three types: PUT_SCAN, PUT_GET and GET_SCAN.")
                    .opt();
   private final Parameter<Double> work_load_ratio =
-      DoubleParameter.newBuilder(getParameterPrefix() + ".ratio").setDefaultValue(0.5)
+      DoubleParameter.newBuilder("mx.ratio").setDefaultValue(0.5)
                      .addConstraint(v -> v > 0 && v < 1)
                      .setDescription("Ratio between operations. It should be between 0 to 1.").opt();
 
@@ -90,10 +90,13 @@ public class MixWorkload extends BaseWorkload {
   }
 
   @Override
-  protected void requisite(List<Parameter> requisites) {
+  public void requisite(List<Parameter> requisites) {
     super.requisite(requisites);
     requisites.add(work_load);
     requisites.add(work_load_ratio);
+    get_work_load.requisite(requisites);
+    put_work_load.requisite(requisites);
+    scan_work_load.requisite(requisites);
   }
 
   @Override

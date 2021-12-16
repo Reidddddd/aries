@@ -39,7 +39,7 @@ public class PutWorkload extends BaseWorkload {
   private final AtomicLong totalRows = new AtomicLong(0);
 
   @Override
-  protected void requisite(List<Parameter> requisites) {
+  public void requisite(List<Parameter> requisites) {
     super.requisite(requisites);
     requisites.add(buffer_size);
   }
@@ -97,7 +97,7 @@ public class PutWorkload extends BaseWorkload {
         }
         mutator.flush();
         mutator.close();
-      } catch (IOException e) {
+      } catch (Exception e) {
         LOG.warning("Error occured " + e.getMessage());
       } finally {
         totalRows.addAndGet(numberOfRows);

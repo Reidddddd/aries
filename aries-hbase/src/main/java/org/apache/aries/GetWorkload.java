@@ -93,7 +93,7 @@ public class GetWorkload extends BaseWorkload {
             }
           }
         }
-      } catch (IOException e) {
+      } catch (Exception e) {
         LOG.warning("Error occured " + e.getMessage());
       } finally {
         effective_read.addAndGet(effective_get);

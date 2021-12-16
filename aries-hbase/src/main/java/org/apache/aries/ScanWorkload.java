@@ -35,7 +35,7 @@ import java.util.Random;
 public class ScanWorkload extends BaseWorkload {
 
   private final Parameter<Boolean> reverse_scan =
-      BoolParameter.newBuilder(getParameterPrefix() + ".reverse_scan_allowed", false)
+      BoolParameter.newBuilder("sw.reverse_scan_allowed", false)
                    .setDescription("If set true, there will be some reverse scan").opt();
 
   @Override
@@ -44,7 +44,7 @@ public class ScanWorkload extends BaseWorkload {
   }
 
   @Override
-  protected void requisite(List<Parameter> requisites) {
+  public void requisite(List<Parameter> requisites) {
     super.requisite(requisites);
     requisites.add(reverse_scan);
   }
@@ -99,7 +99,7 @@ public class ScanWorkload extends BaseWorkload {
             }
           }
         }
-      } catch (IOException e) {
+      } catch (Exception e) {
         LOG.warning("Error occured " + e.getMessage());
       } finally {
       }
