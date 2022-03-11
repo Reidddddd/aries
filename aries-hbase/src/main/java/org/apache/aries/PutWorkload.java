@@ -18,6 +18,7 @@ package org.apache.aries;
 
 import org.apache.aries.common.BaseHandler;
 import org.apache.aries.common.BaseWorkload;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.BufferedMutator;
 import org.apache.hadoop.hbase.client.BufferedMutatorParams;
 import org.apache.hadoop.hbase.client.Put;
@@ -33,7 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PutWorkload extends BaseWorkload {
 
   private final Parameter<Long> buffer_size =
-      LongParameter.newBuilder("pw.buffer_size").setDefaultValue(Constants.ONE_MB)
+      LongParameter.newBuilder(getParameterPrefix() + ".buffer_size").setDefaultValue(Constants.ONE_MB)
                    .setDescription("Buffer size in bytes for batch put").opt();
 
   private final AtomicLong totalRows = new AtomicLong(0);
@@ -51,8 +52,8 @@ public class PutWorkload extends BaseWorkload {
   }
 
   @Override
-  protected BaseHandler createHandler(ToyConfiguration configuration) throws IOException {
-    return new PutHandler(configuration);
+  protected BaseHandler createHandler(ToyConfiguration configuration, TableName table) throws IOException {
+    return new PutHandler(configuration, table);
   }
 
   @Override
@@ -72,14 +73,14 @@ public class PutWorkload extends BaseWorkload {
 
     long numberOfRows;
 
-    PutHandler(ToyConfiguration conf) throws IOException {
-      super(conf);
+    PutHandler(ToyConfiguration conf, TableName table) throws IOException {
+      super(conf, table);
     }
 
     @Override
     public void run() {
       BufferedMutator mutator;
-      BufferedMutatorParams param = new BufferedMutatorParams(table);
+      BufferedMutatorParams param = new BufferedMutatorParams(getTable());
       param.writeBufferSize(buffer_size.value());
       try {
         mutator = connection.getBufferedMutator(param);

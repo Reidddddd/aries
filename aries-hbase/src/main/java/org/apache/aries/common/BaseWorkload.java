@@ -34,26 +34,26 @@ import java.util.concurrent.TimeUnit;
 public abstract class BaseWorkload extends AbstractHBaseToy {
 
   protected final Parameter<Integer> num_connections =
-      IntParameter.newBuilder("bw.num_connections").setRequired()
+      IntParameter.newBuilder(getParameterPrefix() + ".num_connections").setRequired()
                   .setDescription("Number of connections used for worker")
                   .addConstraint(v -> v > 0).opt();
   private final Parameter<String> table_name =
-      StringParameter.newBuilder("bw.target_table").setRequired()
+      StringParameter.newBuilder(getParameterPrefix() + ".target_table").setRequired()
                      .setDescription("A table to be processed").opt();
   protected final Parameter<String> family =
-      StringParameter.newBuilder("bw.target_family")
+      StringParameter.newBuilder(getParameterPrefix() + ".target_family")
                      .setDescription("A family that belongs to the target_table, and wanted to be processed")
                      .setRequired().opt();
   protected final Parameter<Integer> running_time =
-      IntParameter.newBuilder("bw.running_time").setDescription("How long this application run (in seconds").opt();
+      IntParameter.newBuilder(getParameterPrefix() + ".running_time").setDescription("How long this application run (in seconds").opt();
   private final Parameter<Enum> value_kind =
-      EnumParameter.newBuilder("bw.value_kind", VALUE_KIND.FIXED, VALUE_KIND.class)
+      EnumParameter.newBuilder(getParameterPrefix() + ".value_kind", VALUE_KIND.FIXED, VALUE_KIND.class)
                    .setDescription("After the value read, it will be used to verify the result").opt();
   protected final Parameter<Integer> key_length =
-      IntParameter.newBuilder("bw.key_length").setDefaultValue(Constants.DEFAULT_KEY_LENGTH_PW)
+      IntParameter.newBuilder(getParameterPrefix() + ".key_length").setDefaultValue(Constants.DEFAULT_KEY_LENGTH_PW)
                   .setDescription("The length of the generated key in bytes.").opt();
   private final Parameter< Enum> key_kind =
-      EnumParameter.newBuilder("bw.key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
+      EnumParameter.newBuilder(getParameterPrefix() + ".key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
                    .setDescription("Key prefix type: NONE, HEX, DEC.").opt();
 
   private ExecutorService service;
@@ -87,7 +87,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     example(key_kind.key(), "NONE");
   }
 
-  protected abstract BaseHandler createHandler(ToyConfiguration configuration) throws IOException;
+  protected abstract BaseHandler createHandler(ToyConfiguration configuration, TableName table) throws IOException;
 
   @Override
   protected void buildToy(ToyConfiguration configuration) throws Exception {
@@ -109,7 +109,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
       }
     });
     for (int i = 0; i < num_connections.value(); i++) {
-      service.submit(createHandler(configuration));
+      service.submit(createHandler(configuration, table));
     }
 
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {

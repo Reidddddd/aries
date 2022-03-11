@@ -19,6 +19,7 @@ package org.apache.aries.common;
 import org.apache.aries.ConfigurationFactory;
 import org.apache.aries.ToyConfiguration;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -34,11 +35,13 @@ public abstract class BaseHandler implements Runnable {
 
   protected Connection connection;
   protected volatile MessageDigest digest;
+  protected final TableName table;
 
-  public BaseHandler(ToyConfiguration conf) throws IOException {
+  public BaseHandler(ToyConfiguration conf, TableName table) throws IOException {
     connection = createConnection(conf);
     LOG.info("Connection created " + connection + " for " + this.getClass().getSimpleName());
     digest = getDigest();
+    this.table = table;
   }
 
   private MessageDigest getDigest() {
@@ -102,4 +105,7 @@ public abstract class BaseHandler implements Runnable {
     return res == 0;
   }
 
+  protected TableName getTable() {
+    return table;
+  }
 }

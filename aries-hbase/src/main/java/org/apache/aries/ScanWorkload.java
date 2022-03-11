@@ -21,6 +21,7 @@ import org.apache.aries.common.BaseWorkload;
 import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.VALUE_KIND;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
@@ -35,12 +36,12 @@ import java.util.Random;
 public class ScanWorkload extends BaseWorkload {
 
   private final Parameter<Boolean> reverse_scan =
-      BoolParameter.newBuilder("sw.reverse_scan_allowed", false)
+      BoolParameter.newBuilder(getParameterPrefix() + ".reverse_scan_allowed", false)
                    .setDescription("If set true, there will be some reverse scan").opt();
 
   @Override
-  protected BaseHandler createHandler(ToyConfiguration configuration) throws IOException {
-    return new ScanHandler(configuration);
+  protected BaseHandler createHandler(ToyConfiguration configuration, TableName table) throws IOException {
+    return new ScanHandler(configuration, table);
   }
 
   @Override
@@ -64,14 +65,14 @@ public class ScanWorkload extends BaseWorkload {
 
   class ScanHandler extends BaseHandler {
 
-    ScanHandler(ToyConfiguration conf) throws IOException {
-      super(conf);
+    ScanHandler(ToyConfiguration conf, TableName table) throws IOException {
+      super(conf, table);
     }
 
     @Override
     public void run() {
       try {
-        Table target_table = connection.getTable(table);
+        Table target_table = connection.getTable(getTable());
         while (running) {
           String key = getKey(key_prefix, key_length.value());
           Scan scan = new Scan();

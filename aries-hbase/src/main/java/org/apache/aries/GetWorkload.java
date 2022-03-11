@@ -19,6 +19,7 @@ package org.apache.aries;
 import org.apache.aries.common.BaseHandler;
 import org.apache.aries.common.BaseWorkload;
 import org.apache.aries.common.VALUE_KIND;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
@@ -35,8 +36,8 @@ public class GetWorkload extends BaseWorkload {
   private final AtomicLong wrong_read = new AtomicLong(0);
 
   @Override
-  protected BaseHandler createHandler(ToyConfiguration configuration) throws IOException {
-    return new GetHandler(configuration);
+  protected BaseHandler createHandler(ToyConfiguration configuration, TableName table) throws IOException {
+    return new GetHandler(configuration, table);
   }
 
   @Override
@@ -63,14 +64,14 @@ public class GetWorkload extends BaseWorkload {
     long correct_get;
     long wrong_get;
 
-    GetHandler(ToyConfiguration conf) throws IOException {
-      super(conf);
+    GetHandler(ToyConfiguration conf, TableName table) throws IOException {
+      super(conf, table);
     }
 
     @Override
     public void run() {
       try {
-        Table target_table = connection.getTable(table);
+        Table target_table = connection.getTable(getTable());
         while (running) {
           String key = getKey(key_prefix, key_length.value());
           Get get = new Get(Bytes.toBytes(key));

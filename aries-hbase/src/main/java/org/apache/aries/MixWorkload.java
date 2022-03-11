@@ -21,6 +21,7 @@ import org.apache.aries.common.BaseWorkload;
 import org.apache.aries.common.DoubleParameter;
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.Parameter;
+import org.apache.hadoop.hbase.TableName;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,11 +29,11 @@ import java.util.List;
 public class MixWorkload extends BaseWorkload {
 
   private final Parameter<Enum> work_load =
-      EnumParameter.newBuilder("mx.work_load", MODE.PUT_SCAN, MODE.class).setRequired()
+      EnumParameter.newBuilder(getParameterPrefix() + ".work_load", MODE.PUT_SCAN, MODE.class).setRequired()
                    .setDescription("Mix work load type. There're three types: PUT_SCAN, PUT_GET and GET_SCAN.")
                    .opt();
   private final Parameter<Double> work_load_ratio =
-      DoubleParameter.newBuilder("mx.ratio").setDefaultValue(0.5)
+      DoubleParameter.newBuilder(getParameterPrefix() + ".ratio").setDefaultValue(0.5)
                      .addConstraint(v -> v > 0 && v < 1)
                      .setDescription("Ratio between operations. It should be between 0 to 1.").opt();
 
@@ -56,30 +57,30 @@ public class MixWorkload extends BaseWorkload {
   }
 
   @Override
-  protected BaseHandler createHandler(ToyConfiguration configuration) throws IOException {
+  protected BaseHandler createHandler(ToyConfiguration configuration, TableName table) throws IOException {
     BaseHandler handler = null;
     switch (mode) {
       case PUT_GET: {
         if (left-- > 0) {
-          handler = put_work_load.createHandler(configuration);
+          handler = put_work_load.createHandler(configuration, table);
         } else if (right-- > 0) {
-          handler = get_work_load.createHandler(configuration);
+          handler = get_work_load.createHandler(configuration, table);
         }
         break;
       }
       case PUT_SCAN: {
         if (left-- > 0) {
-          handler = put_work_load.createHandler(configuration);
+          handler = put_work_load.createHandler(configuration, table);
         } else if (right-- > 0) {
-          handler = scan_work_load.createHandler(configuration);
+          handler = scan_work_load.createHandler(configuration, table);
         }
         break;
       }
       case GET_SCAN: {
         if (left-- > 0) {
-          handler = get_work_load.createHandler(configuration);
+          handler = get_work_load.createHandler(configuration, table);
         } else if (right-- > 0) {
-          handler = scan_work_load.createHandler(configuration);
+          handler = scan_work_load.createHandler(configuration, table);
         }
         break;
       }
