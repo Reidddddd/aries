@@ -16,18 +16,13 @@
 
 package org.apache.aries;
 
-import org.apache.aries.common.BaseHandler;
 import org.apache.aries.common.BaseWorkload;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.BufferedMutator;
-import org.apache.hadoop.hbase.client.BufferedMutatorParams;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.aries.factory.HandlerFactory;
+import org.apache.aries.factory.PutHandlerFactory;
 import org.apache.aries.common.Constants;
 import org.apache.aries.common.LongParameter;
 import org.apache.aries.common.Parameter;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -52,8 +47,8 @@ public class PutWorkload extends BaseWorkload {
   }
 
   @Override
-  protected BaseHandler createHandler(ToyConfiguration configuration, TableName table) throws IOException {
-    return new PutHandler(configuration, table);
+  protected HandlerFactory initHandlerFactory(ToyConfiguration configuration, List<Parameter> parameters) {
+    return new PutHandlerFactory(configuration, parameters);
   }
 
   @Override
@@ -67,44 +62,6 @@ public class PutWorkload extends BaseWorkload {
 
   @Override protected String getParameterPrefix() {
     return "pw";
-  }
-
-  class PutHandler extends BaseHandler {
-
-    long numberOfRows;
-
-    PutHandler(ToyConfiguration conf, TableName table) throws IOException {
-      super(conf, table);
-    }
-
-    @Override
-    public void run() {
-      BufferedMutator mutator;
-      BufferedMutatorParams param = new BufferedMutatorParams(getTable());
-      param.writeBufferSize(buffer_size.value());
-      try {
-        mutator = connection.getBufferedMutator(param);
-        while (running) {
-          String k = getKey(key_prefix, key_length.value());
-          byte[] value = getValue(kind, k);
-          Put put = new Put(Bytes.toBytes(k));
-          put.addColumn(
-              Bytes.toBytes(family.value()),
-              Bytes.toBytes("q"),
-              value
-          );
-          mutator.mutate(put);
-          numberOfRows++;
-        }
-        mutator.flush();
-        mutator.close();
-      } catch (Exception e) {
-        LOG.warning("Error occured " + e.getMessage());
-      } finally {
-        totalRows.addAndGet(numberOfRows);
-      }
-    }
-
   }
 
 }

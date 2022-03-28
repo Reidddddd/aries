@@ -65,6 +65,10 @@ public abstract class AbstractToy implements Toy {
     }
   }
 
+  protected List<Parameter> getParameters() {
+    return parameters;
+  }
+
   protected abstract String getParameterPrefix();
 
   protected void printParameters(ToyConfiguration toy_conf, String parameter_prefix) {

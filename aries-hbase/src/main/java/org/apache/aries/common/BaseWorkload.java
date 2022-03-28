@@ -18,11 +18,12 @@ package org.apache.aries.common;
 
 import org.apache.aries.AbstractHBaseToy;
 import org.apache.aries.ToyConfiguration;
+import org.apache.aries.factory.HandlerFactory;
+import org.apache.aries.factory.HandlerFactory.BaseHandler;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Admin;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -52,18 +53,18 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
   protected final Parameter<Integer> key_length =
       IntParameter.newBuilder(getParameterPrefix() + ".key_length").setDefaultValue(Constants.DEFAULT_KEY_LENGTH_PW)
                   .setDescription("The length of the generated key in bytes.").opt();
-  private final Parameter< Enum> key_kind =
+  private final Parameter<Enum> key_kind =
       EnumParameter.newBuilder(getParameterPrefix() + ".key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
                    .setDescription("Key prefix type: NONE, HEX, DEC.").opt();
 
-  private ExecutorService service;
   private final Object mutex = new Object();
+  private ExecutorService service;
+  private BaseHandler[] handlers;
 
   protected TableName table;
   protected Admin admin;
   protected VALUE_KIND kind;
   protected KEY_PREFIX key_prefix;
-  protected volatile boolean running = true;
 
   @Override
   public void requisite(List<Parameter> requisites) {
@@ -87,7 +88,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     example(key_kind.key(), "NONE");
   }
 
-  protected abstract BaseHandler createHandler(ToyConfiguration configuration, TableName table) throws IOException;
+  protected abstract HandlerFactory initHandlerFactory(ToyConfiguration configuration, List<Parameter> parameters);
 
   @Override
   protected void buildToy(ToyConfiguration configuration) throws Exception {
@@ -98,6 +99,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
       throw new TableNotFoundException(table);
     }
 
+    HandlerFactory factory = initHandlerFactory(configuration, getParameters());
     kind = (VALUE_KIND) value_kind.value();
     key_prefix = (KEY_PREFIX) key_kind.value();
 
@@ -108,8 +110,11 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
         return new Thread(r, "Handler-" + (i++));
       }
     });
-    for (int i = 0; i < num_connections.value(); i++) {
-      service.submit(createHandler(configuration, table));
+
+    handlers = new BaseHandler[num_connections.value()];
+    for (int i = 0; i < handlers.length; i++) {
+      handlers[i] = factory.createHandler(table);
+      service.submit(handlers[i]);
     }
 
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -140,7 +145,9 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
   protected int haveFun() throws Exception {
     synchronized (mutex) {
       mutex.wait();
-      running = false;
+      for (BaseHandler handler : handlers) {
+        handler.interrupt();
+      }
     }
     service.awaitTermination(30, TimeUnit.SECONDS);
     return 0;
