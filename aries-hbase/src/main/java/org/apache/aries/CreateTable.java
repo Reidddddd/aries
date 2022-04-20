@@ -53,7 +53,7 @@ public class CreateTable extends AbstractHBaseToy {
                    .setRequired().setDescription("Split algorithm, either HEX or DEC").opt();
   private final Parameter<Integer> hex_split_regions =
       IntParameter.newBuilder("ct.hex_split_regions").setDescription("Number of regions expecting when using hex split algorithm, upper bound is 256")
-                  .addConstraint(v -> v > 1).addConstraint(v -> v <= 256).addConstraint(v -> 256 % v == 0).opt();
+                  .addConstraint(v -> v > 1).addConstraint(v -> v <= 4096).addConstraint(v -> 4096 % v == 0).opt();
   private final Parameter<Integer> dec_split_regions =
       IntParameter.newBuilder("ct.dec_split_regions").setDescription("Number of regions expecting when using number split algorithm, upper bound is 1000")
                   .addConstraint(v -> v > 1).addConstraint(v -> v <= 1000).addConstraint(v -> 1000 % v == 0).opt();
