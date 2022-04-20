@@ -271,14 +271,18 @@ public class CreateTable extends AbstractHBaseToy {
       // the interval will be 1000 / 10 = 100;
       // but the split key should be [1,2,3,4,5,6,7,8,9] instead of [100,200,300,400,500,...,900]
       if (radix == 10) {
-        pad_size = interval % 100 == 0 ? 1 : interval % 10 == 0 ? 2 : 3;
+        pad_size = interval % 100 == 0 ? 1 :
+                   interval %  10 == 0 ? 2 : 3;
         interval = interval % 100 == 0 ? interval / 100 :
-                   interval % 10 == 0  ? interval / 10 :
+                   interval %  10 == 0 ? interval / 10 :
                    interval;
       } else if (radix == 16) {
-        pad_size = interval % 256 == 0 ? 2 : interval % 16 == 0 ? 1 : 2;
-        interval = interval % 256 == 0 ? interval / 256 :
-                   interval % 16 == 0  ? interval / 16 :
+        pad_size = interval % 4096 == 0 ? 3 :
+                   interval %  256 == 0 ? 2 :
+                   interval %   16 == 0 ? 1 : 2;
+        interval = interval % 4096 == 0 ? interval / 4096 :
+                   interval %  256 == 0 ? interval / 256 :
+                   interval %   16 == 0 ? interval / 16 :
                    interval;
       }
     }
@@ -318,7 +322,7 @@ public class CreateTable extends AbstractHBaseToy {
   private class HexSplitAlgorithm extends NumericSplitAlgorithm {
 
     HexSplitAlgorithm(int expect_splits) {
-      super(256, expect_splits, 16);
+      super(4096, expect_splits, 16);
     }
 
     @Override String covert(int key) {
