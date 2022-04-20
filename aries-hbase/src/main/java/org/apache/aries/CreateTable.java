@@ -277,9 +277,8 @@ public class CreateTable extends AbstractHBaseToy {
                    interval %  10 == 0 ? interval / 10 :
                    interval;
       } else if (radix == 16) {
-        pad_size = interval % 4096 == 0 ? 3 :
-                   interval %  256 == 0 ? 2 :
-                   interval %   16 == 0 ? 1 : 2;
+        pad_size = interval %  256 == 0 ? 1 :
+                   interval %   16 == 0 ? 2 : 3;
         interval = interval % 4096 == 0 ? interval / 4096 :
                    interval %  256 == 0 ? interval / 256 :
                    interval %   16 == 0 ? interval / 16 :
