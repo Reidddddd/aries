@@ -78,6 +78,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     requisites.add(value_kind);
     requisites.add(key_kind);
     requisites.add(key_length);
+    requisites.add(records_num);
   }
 
   @Override
@@ -89,6 +90,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     example(value_kind.key(), "FIXED");
     example(key_length.key(), "10");
     example(key_kind.key(), "NONE");
+    example(records_num.key(), "10000");
   }
 
   @Override
@@ -96,7 +98,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     KEY_PREFIX prefix = (KEY_PREFIX) key_kind.value();
     if (prefix == KEY_PREFIX.SEQ) {
       if (records_num.empty()) {
-        throw new IllegalArgumentException("If use SEQ key kind," + getParameterPrefix() + ".records_num must be set.");
+        throw new IllegalArgumentException("If use SEQ key kind, " + getParameterPrefix() + ".records_num must be set.");
       }
     }
   }
