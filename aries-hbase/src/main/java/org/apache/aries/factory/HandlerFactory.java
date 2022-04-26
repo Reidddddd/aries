@@ -109,7 +109,7 @@ public abstract class HandlerFactory {
       return digest;
     }
 
-    private static final AtomicInteger sequence = new AtomicInteger(1);
+    protected static final AtomicInteger sequence = new AtomicInteger(1);
     private final Random random = new Random();
 
     protected String getKey(KEY_PREFIX key_prefix, int key_length, boolean random_key) {

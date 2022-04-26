@@ -60,7 +60,7 @@ public class PutHandlerFactory extends HandlerFactory {
       param.writeBufferSize(hbase_conf.getLong(BUFFER_SIZE, 0L));
       try {
         mutator = connection.getBufferedMutator(param);
-        while (!isInterrupted()) {
+        while (!isInterrupted() && sequence.get() < records_num) {
           String k = getKey(key_kind, key_length, hbase_conf.getBoolean(RANDOM_OPS, true));
           byte[] value = getValue(value_kind, k);
           Put put = new Put(Bytes.toBytes(k));
