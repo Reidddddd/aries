@@ -53,9 +53,9 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
   protected final Parameter<Integer> key_length =
       IntParameter.newBuilder(getParameterPrefix() + ".key_length").setDefaultValue(Constants.DEFAULT_KEY_LENGTH_PW)
                   .setDescription("The length of the generated key in bytes.").opt();
-  private final Parameter<Enum> key_kind =
+  protected final Parameter<Enum> key_kind =
       EnumParameter.newBuilder(getParameterPrefix() + ".key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
-                   .setDescription("Key prefix type: NONE, HEX, DEC.").opt();
+                   .setDescription("Key prefix type: NONE, HEX, DEC, SEQ.").opt();
   protected final Parameter<Integer> records_num =
       IntParameter.newBuilder(getParameterPrefix() + ".records_num").setDescription("How many records will be put or read under SEQ key kind").opt();
 

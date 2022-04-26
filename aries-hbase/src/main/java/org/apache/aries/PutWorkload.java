@@ -18,6 +18,7 @@ package org.apache.aries;
 
 import org.apache.aries.common.BaseWorkload;
 import org.apache.aries.common.BoolParameter;
+import org.apache.aries.common.KEY_PREFIX;
 import org.apache.aries.factory.HandlerFactory;
 import org.apache.aries.factory.PutHandlerFactory;
 import org.apache.aries.common.Constants;
@@ -50,6 +51,17 @@ public class PutWorkload extends BaseWorkload {
     super.exampleConfiguration();
     example(buffer_size.key(), "1024");
     example(random_ops.key(), "true");
+  }
+
+  @Override
+  protected void midCheck() {
+    super.midCheck();
+    KEY_PREFIX prefix = (KEY_PREFIX) key_kind.value();
+    if (prefix == KEY_PREFIX.SEQ) {
+      if (random_ops.value()) {
+        throw new IllegalArgumentException("If use SEQ key kind, " + random_ops.key() + " must be set false");
+      }
+    }
   }
 
   @Override
