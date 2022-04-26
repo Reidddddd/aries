@@ -16,6 +16,7 @@
 
 package org.apache.aries;
 
+import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
@@ -288,21 +289,12 @@ public class CreateTable extends AbstractHBaseToy {
 
     @Override public byte[][] getSplitsKeys() {
       for (int i = interval, j = 0; j < split_key.length; i += interval, j++) {
-        split_key[j] = Bytes.toBytes(paddingWithZero(pad_size, covert(i)));
+        split_key[j] = Bytes.toBytes(ToyUtils.paddingWithZero(pad_size, covert(i)));
       }
       return split_key;
     }
 
     abstract String covert(int key);
-
-    private String paddingWithZero(int size, String to_be_padded) {
-      if (size == to_be_padded.length()) return to_be_padded;
-
-      StringBuilder leadingZero = new StringBuilder();
-      int pad = size - to_be_padded.length();
-      while (pad-- > 0) leadingZero.append("0");
-      return leadingZero.append(to_be_padded).toString();
-    }
 
   }
 

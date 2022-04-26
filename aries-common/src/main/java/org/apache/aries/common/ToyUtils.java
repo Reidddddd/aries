@@ -49,5 +49,14 @@ public final class ToyUtils {
     return Base64.getEncoder().encode(key.getBytes(StandardCharsets.UTF_8));
   }
 
+  public static String paddingWithZero(int size, String to_be_padded) {
+    if (size == to_be_padded.length()) return to_be_padded;
+
+    StringBuilder leadingZero = new StringBuilder();
+    int pad = size - to_be_padded.length();
+    while (pad-- > 0) leadingZero.append("0");
+    return leadingZero.append(to_be_padded).toString();
+  }
+
 }
 

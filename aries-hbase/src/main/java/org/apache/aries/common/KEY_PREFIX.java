@@ -17,5 +17,5 @@
 package org.apache.aries.common;
 
 public enum KEY_PREFIX {
-  NONE, DEC, HEX
+  NONE, DEC, HEX, SEQ
 }

@@ -17,6 +17,7 @@
 package org.apache.aries;
 
 import org.apache.aries.common.BaseWorkload;
+import org.apache.aries.common.BoolParameter;
 import org.apache.aries.factory.HandlerFactory;
 import org.apache.aries.factory.PutHandlerFactory;
 import org.apache.aries.common.Constants;
@@ -31,6 +32,9 @@ public class PutWorkload extends BaseWorkload {
   private final Parameter<Long> buffer_size =
       LongParameter.newBuilder(getParameterPrefix() + ".buffer_size").setDefaultValue(Constants.ONE_MB)
                    .setDescription("Buffer size in bytes for batch put").opt();
+  private final Parameter<Boolean> random_ops =
+      BoolParameter.newBuilder(getParameterPrefix() + ".random_key", true)
+                   .setDescription("It must be set false, if using SEQ key mode").opt();
 
   private final AtomicLong totalRows = new AtomicLong(0);
 
@@ -38,12 +42,14 @@ public class PutWorkload extends BaseWorkload {
   public void requisite(List<Parameter> requisites) {
     super.requisite(requisites);
     requisites.add(buffer_size);
+    requisites.add(random_ops);
   }
 
   @Override
   protected void exampleConfiguration() {
     super.exampleConfiguration();
     example(buffer_size.key(), "1024");
+    example(random_ops.key(), "true");
   }
 
   @Override

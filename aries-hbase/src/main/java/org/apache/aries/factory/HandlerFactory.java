@@ -33,6 +33,8 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 public abstract class HandlerFactory {
@@ -47,6 +49,7 @@ public abstract class HandlerFactory {
       if (parameter.key().contains(BaseHandler.KEY_KIND))   hbase_conf.setEnum(BaseHandler.KEY_KIND, (KEY_PREFIX) parameter.value());
       if (parameter.key().contains(BaseHandler.KEY_LENGTH)) hbase_conf.setInt(BaseHandler.KEY_LENGTH, (Integer) parameter.value());
       if (parameter.key().contains(BaseHandler.VALUE_KINE)) hbase_conf.setEnum(BaseHandler.VALUE_KINE, (VALUE_KIND) parameter.value());
+      if (parameter.key().contains(BaseHandler.RECORDS_NUM)) hbase_conf.setInt(BaseHandler.RECORDS_NUM, (Integer) parameter.value());
     }
   }
 
@@ -58,6 +61,7 @@ public abstract class HandlerFactory {
     static final String KEY_KIND = "key_kind";
     static final String KEY_LENGTH = "key_length";
     static final String VALUE_KINE = "value_kind";
+    static final String RECORDS_NUM = "records_num";
 
     protected static final Logger LOG = Logger.getLogger(BaseHandler.class.getName());
 
@@ -70,6 +74,9 @@ public abstract class HandlerFactory {
     protected final KEY_PREFIX key_kind;
     protected final int key_length;
     protected final VALUE_KIND value_kind;
+    protected final int records_num;
+
+    private final int pad_length;
 
     public BaseHandler(Configuration conf, TableName table) throws IOException {
       hbase_conf = conf;
@@ -81,6 +88,9 @@ public abstract class HandlerFactory {
       key_length = hbase_conf.getInt(KEY_LENGTH, 0);
       value_kind = hbase_conf.getEnum(VALUE_KINE, VALUE_KIND.FIXED);
       digest = getDigest();
+      records_num = hbase_conf.getInt(RECORDS_NUM, 0);
+      String records_num_in_string = Integer.toString(records_num);
+      pad_length = records_num_in_string.length();
     }
 
     private MessageDigest getDigest() {
@@ -99,7 +109,10 @@ public abstract class HandlerFactory {
       return digest;
     }
 
-    protected String getKey(KEY_PREFIX key_prefix, int key_length) {
+    private static final AtomicInteger sequence = new AtomicInteger(1);
+    private final Random random = new Random();
+
+    protected String getKey(KEY_PREFIX key_prefix, int key_length, boolean random_key) {
       String key = ToyUtils.generateRandomString(key_length);
       switch (key_prefix) {
         case HEX: {
@@ -112,6 +125,14 @@ public abstract class HandlerFactory {
           byte[] digested = digest.digest(Bytes.toBytes(key));
           String md5 = new BigInteger(1, digested).toString(10).toLowerCase();
           key = md5.substring(md5.length() - 2) + ":" + key;
+          break;
+        }
+        case SEQ: {
+          int ran_key = random_key ? random.nextInt(records_num) + 1 : sequence.getAndIncrement();
+          String ran_key_in_string = Integer.toString(ran_key);
+          String key_without_prefix = ToyUtils.paddingWithZero(pad_length, ran_key_in_string);
+          String prefix = key_without_prefix.substring(key_without_prefix.length() - 3);
+          key = prefix + ":" + key_without_prefix;
           break;
         }
         case NONE: {

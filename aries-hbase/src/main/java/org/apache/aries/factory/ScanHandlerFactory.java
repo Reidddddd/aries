@@ -67,9 +67,9 @@ public class ScanHandlerFactory extends HandlerFactory {
       try {
         Table target_table = connection.getTable(getTable());
         while (!isInterrupted()) {
-          String key = getKey(key_kind, key_length);
-          String k1 = getKey(key_kind, key_length);
-          String k2 = getKey(key_kind, key_length);
+          String key = getKey(key_kind, key_length, true);
+          String k1 = getKey(key_kind, key_length, true);
+          String k2 = getKey(key_kind, key_length, true);
           Pair<byte[], byte[]> boundaries = getBoundaries(k1, k2);
 
           Scan scan = new Scan();

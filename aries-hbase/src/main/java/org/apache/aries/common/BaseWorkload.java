@@ -56,6 +56,9 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
   private final Parameter<Enum> key_kind =
       EnumParameter.newBuilder(getParameterPrefix() + ".key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
                    .setDescription("Key prefix type: NONE, HEX, DEC.").opt();
+  protected final Parameter<Integer> records_num =
+      IntParameter.newBuilder(getParameterPrefix() + ".records_num").setDescription("How many records will be put or read under SEQ key kind").opt();
+
 
   private final Object mutex = new Object();
   private ExecutorService service;
@@ -86,6 +89,16 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     example(value_kind.key(), "FIXED");
     example(key_length.key(), "10");
     example(key_kind.key(), "NONE");
+  }
+
+  @Override
+  protected void midCheck() {
+    KEY_PREFIX prefix = (KEY_PREFIX) key_kind.value();
+    if (prefix == KEY_PREFIX.SEQ) {
+      if (records_num.empty()) {
+        throw new IllegalArgumentException("If use SEQ key kind," + getParameterPrefix() + ".records_num must be set.");
+      }
+    }
   }
 
   protected abstract HandlerFactory initHandlerFactory(ToyConfiguration configuration, List<Parameter> parameters);
