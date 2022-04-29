@@ -16,6 +16,8 @@
 
 package org.apache.aries.common;
 
+import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.MetricRegistry;
 import org.apache.aries.AbstractHBaseToy;
 import org.apache.aries.ToyConfiguration;
 import org.apache.aries.factory.HandlerFactory;
@@ -61,6 +63,12 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
 
 
   private final Object mutex = new Object();
+  private final MetricRegistry registry = MetricRegistryInstance.getMetricRegistry();
+  private final ConsoleReporter reporter = ConsoleReporter.forRegistry(registry)
+                                                          .convertRatesTo(TimeUnit.NANOSECONDS)
+                                                          .convertDurationsTo(TimeUnit.NANOSECONDS)
+                                                          .build();
+
   private ExecutorService service;
   private BaseHandler[] handlers;
 
@@ -126,6 +134,8 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
       }
     });
 
+    reporter.start(1, TimeUnit.SECONDS);
+
     handlers = new BaseHandler[num_connections.value()];
     for (int i = 0; i < handlers.length; i++) {
       handlers[i] = factory.createHandler(table);
@@ -172,6 +182,8 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
   protected void destroyToy() throws Exception {
     super.destroyToy();
     admin.close();
+    reporter.report();
+    reporter.close();
   }
 
 }

@@ -16,6 +16,7 @@
 
 package org.apache.aries.factory;
 
+import com.codahale.metrics.Timer;
 import org.apache.aries.ToyConfiguration;
 import org.apache.aries.common.Parameter;
 import org.apache.hadoop.conf.Configuration;
@@ -61,15 +62,18 @@ public class PutHandlerFactory extends HandlerFactory {
       try {
         mutator = connection.getBufferedMutator(param);
         while (!isInterrupted() && sequence.get() <= records_num) {
-          String k = getKey(key_kind, key_length, hbase_conf.getBoolean(RANDOM_OPS, true));
-          byte[] value = getValue(value_kind, k);
-          Put put = new Put(Bytes.toBytes(k));
-          put.addColumn(
-              Bytes.toBytes(family),
-              Bytes.toBytes("q"),
-              value
-          );
-          mutator.mutate(put);
+          try (final Timer.Context context = latency.time()) {
+            String k = getKey(key_kind, key_length, hbase_conf.getBoolean(RANDOM_OPS, true));
+            byte[] value = getValue(value_kind, k);
+            Put put = new Put(Bytes.toBytes(k));
+            put.addColumn(
+                Bytes.toBytes(family),
+                Bytes.toBytes("q"),
+                value
+            );
+            mutator.mutate(put);
+          }
+          requests_per_second.mark();
         }
         mutator.flush();
         mutator.close();

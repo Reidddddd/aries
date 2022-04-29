@@ -16,9 +16,13 @@
 
 package org.apache.aries.factory;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import org.apache.aries.ConfigurationFactory;
 import org.apache.aries.ToyConfiguration;
 import org.apache.aries.common.KEY_PREFIX;
+import org.apache.aries.common.MetricRegistryInstance;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.ToyUtils;
 import org.apache.aries.common.VALUE_KIND;
@@ -64,6 +68,9 @@ public abstract class HandlerFactory {
     static final String RECORDS_NUM = "records_num";
 
     protected static final Logger LOG = Logger.getLogger(BaseHandler.class.getName());
+    protected static final MetricRegistry registry = MetricRegistryInstance.getMetricRegistry();
+    protected static final Meter requests_per_second = registry.meter("requests");
+    protected static final Timer latency = registry.timer("latency");
 
     protected volatile MessageDigest digest;
 
