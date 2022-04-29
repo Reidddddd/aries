@@ -98,7 +98,11 @@ public class CreateTable extends AbstractHBaseToy {
                    .opt();
   private final Parameter<Boolean> in_memory =
       BoolParameter.newBuilder("ct.in_memory", false)
-                   .setDescription("data cached in memory region of block cache. This is a family level parameter, so use this ct.in_memory.$family as full key")
+                   .setDescription("Data cached in memory region of block cache. This is a family level parameter, so use this ct.in_memory.$family as full key")
+                   .opt();
+  private final Parameter<Boolean> block_cache_enable =
+      BoolParameter.newBuilder("ct.block_cache_enable", true)
+                   .setDescription("Whether server side turn on block cache feature for this column family.")
                    .opt();
 
   private TableName table;
@@ -125,6 +129,7 @@ public class CreateTable extends AbstractHBaseToy {
     requisites.add(max_versions);
     requisites.add(data_block_encoding);
     requisites.add(in_memory);
+    requisites.add(block_cache_enable);
   }
 
   @Override
@@ -173,6 +178,7 @@ public class CreateTable extends AbstractHBaseToy {
     example(max_versions.key() + ".a", "1");
     example(data_block_encoding.key() + ".a", "FASTDIFF");
     example(in_memory.key() + ".a", "true");
+    example(block_cache_enable.key() + ".a", "false");
   }
 
   @Override protected String getParameterPrefix() {
@@ -210,6 +216,7 @@ public class CreateTable extends AbstractHBaseToy {
            descriptor.setMaxVersions(max_versions.value());
            descriptor.setDataBlockEncoding((DataBlockEncoding)data_block_encoding.value());
            descriptor.setInMemory(in_memory.value());
+           descriptor.setBlockCacheEnabled(block_cache_enable.value());
     return descriptor;
   }
 
