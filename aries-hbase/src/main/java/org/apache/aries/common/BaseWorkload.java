@@ -59,7 +59,11 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
       EnumParameter.newBuilder(getParameterPrefix() + ".key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
                    .setDescription("Key prefix type: NONE, HEX, DEC, SEQ.").opt();
   protected final Parameter<Integer> records_num =
-      IntParameter.newBuilder(getParameterPrefix() + ".records_num").setDescription("How many records will be put or read under SEQ key kind").opt();
+      IntParameter.newBuilder(getParameterPrefix() + ".records_num").setDescription("How many records will be put or read under SEQ key kind.").opt();
+  protected final Parameter<Integer> report_interval =
+      IntParameter.newBuilder(getParameterPrefix() + ".report_interval").setDefaultValue(1)
+                  .setDescription("The interval for metrics output to console, in seconds.")
+                  .opt();
 
 
   private final Object mutex = new Object();
@@ -87,6 +91,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     requisites.add(key_kind);
     requisites.add(key_length);
     requisites.add(records_num);
+    requisites.add(report_interval);
   }
 
   @Override
@@ -99,6 +104,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     example(key_length.key(), "10");
     example(key_kind.key(), "NONE");
     example(records_num.key(), "10000");
+    example(report_interval.key(), "10");
   }
 
   @Override
@@ -134,7 +140,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
       }
     });
 
-    reporter.start(10, TimeUnit.SECONDS);
+    reporter.start(report_interval.value(), TimeUnit.SECONDS);
 
     handlers = new BaseHandler[num_connections.value()];
     for (int i = 0; i < handlers.length; i++) {
