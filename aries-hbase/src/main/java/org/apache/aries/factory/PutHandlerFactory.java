@@ -37,6 +37,7 @@ public class PutHandlerFactory extends HandlerFactory {
     for (Parameter parameter : parameters) {
       if (parameter.key().contains(PutHandler.BUFFER_SIZE)) hbase_conf.setLong(PutHandler.BUFFER_SIZE, (Long) parameter.value());
       if (parameter.key().contains(PutHandler.RANDOM_OPS))  hbase_conf.setBoolean(PutHandler.RANDOM_OPS, (Boolean) parameter.value());
+      if (parameter.key().contains(PutHandler.VALUE_SIZE))  hbase_conf.setInt(PutHandler.VALUE_SIZE, (Integer) parameter.value());
     }
   }
 
@@ -49,6 +50,7 @@ public class PutHandlerFactory extends HandlerFactory {
 
     public static final String BUFFER_SIZE = "buffer_size";
     public static final String RANDOM_OPS = "random_key";
+    public static final String VALUE_SIZE = "value_size_in_bytes";
 
     PutHandler(Configuration conf, TableName table) throws IOException {
       super(conf, table);
@@ -64,7 +66,7 @@ public class PutHandlerFactory extends HandlerFactory {
         while (!isInterrupted() && sequence.get() <= records_num) {
           try (final Timer.Context context = latency.time()) {
             String k = getKey(key_kind, key_length, hbase_conf.getBoolean(RANDOM_OPS, true));
-            byte[] value = getValue(value_kind, k);
+            byte[] value = getValue(value_kind, k, hbase_conf.getInt(VALUE_SIZE, 0));
             Put put = new Put(Bytes.toBytes(k));
             put.addColumn(
                 Bytes.toBytes(family),

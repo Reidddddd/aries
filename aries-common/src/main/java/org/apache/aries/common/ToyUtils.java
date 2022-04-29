@@ -18,6 +18,7 @@ package org.apache.aries.common;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Random;
 
 public final class ToyUtils {
 
@@ -43,6 +44,13 @@ public final class ToyUtils {
       builder.append(RANDOM_CHARS.charAt((int)(Math.random() * RANDOM_CHARS.length())));
     }
     return builder.toString();
+  }
+
+  private static Random random = new Random();
+  public static byte[] generateRandomBytes(int size_in_bytes) {
+    byte[] res = new byte[size_in_bytes];
+    random.nextBytes(res);
+    return res;
   }
 
   public static byte[] generateBase64Value(String key) {

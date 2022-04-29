@@ -150,11 +150,11 @@ public abstract class HandlerFactory {
       return key;
     }
 
-    protected byte[] getValue(VALUE_KIND kind, String key) {
+    protected byte[] getValue(VALUE_KIND kind, String key, int size_in_bytes) {
       switch (kind) {
         case FIXED:  return ToyUtils.generateBase64Value(key);
-        case RANDOM: return Bytes.toBytes(ToyUtils.generateRandomString(22));
-        default:     return Bytes.toBytes(ToyUtils.generateRandomString(22));
+        case RANDOM: return ToyUtils.generateRandomBytes(size_in_bytes);
+        default:     return ToyUtils.generateRandomBytes(size_in_bytes);
       }
     }
 
