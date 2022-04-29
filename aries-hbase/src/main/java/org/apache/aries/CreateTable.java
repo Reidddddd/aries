@@ -230,6 +230,7 @@ public class CreateTable extends AbstractHBaseToy {
            max_versions.setValue(conf.getInt(max_versions.key() + suffix, max_versions.defvalue()));
     data_block_encoding.setValue(conf.getEnum(data_block_encoding.key() + suffix, data_block_encoding.defvalue()));
               in_memory.setValue(conf.getBoolean(in_memory.key() + suffix, in_memory.defvalue()));
+     block_cache_enable.setValue(conf.getBoolean(block_cache_enable.key() + suffix, block_cache_enable.defvalue()));
   }
 
   private SplitAlgorithm buildSplitAlgorithm(Enum raw_algorithm) {
