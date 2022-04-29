@@ -73,7 +73,6 @@ public class PutHandlerFactory extends HandlerFactory {
             );
             mutator.mutate(put);
           }
-          requests_per_second.mark();
         }
         mutator.flush();
         mutator.close();

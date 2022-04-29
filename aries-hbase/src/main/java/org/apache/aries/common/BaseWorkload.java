@@ -65,7 +65,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
   private final Object mutex = new Object();
   private final MetricRegistry registry = MetricRegistryInstance.getMetricRegistry();
   private final ConsoleReporter reporter = ConsoleReporter.forRegistry(registry)
-                                                          .convertRatesTo(TimeUnit.NANOSECONDS)
+                                                          .convertRatesTo(TimeUnit.SECONDS)
                                                           .convertDurationsTo(TimeUnit.NANOSECONDS)
                                                           .build();
 
@@ -134,7 +134,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
       }
     });
 
-    reporter.start(1, TimeUnit.SECONDS);
+    reporter.start(10, TimeUnit.SECONDS);
 
     handlers = new BaseHandler[num_connections.value()];
     for (int i = 0; i < handlers.length; i++) {
