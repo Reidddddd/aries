@@ -65,12 +65,12 @@ public class ScanHandlerFactory extends HandlerFactory {
 
     ScanHandler(Configuration conf, TableName table) throws IOException {
       super(conf, table);
-      rows = registry.meter(Thread.currentThread().getName() + "_scan");
-      elapsed = registry.timer(Thread.currentThread().getName() + "_scan_elapsed");
     }
 
     @Override
     public void run() {
+      rows = registry.meter(Thread.currentThread().getName() + "_scan");
+      elapsed = registry.timer(Thread.currentThread().getName() + "_scan_elapsed");
       try {
         Table target_table = connection.getTable(getTable());
         while (!isInterrupted()) {
