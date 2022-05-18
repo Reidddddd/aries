@@ -16,6 +16,8 @@
 
 package org.apache.aries.factory;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import org.apache.aries.ToyConfiguration;
 import org.apache.aries.common.KEY_PREFIX;
 import org.apache.aries.common.Parameter;
@@ -58,8 +60,13 @@ public class ScanHandlerFactory extends HandlerFactory {
     public static final String RESULT_VERIFICATION = "result_verification";
     final Random random = new Random();
 
+    private Meter rows;
+    private Timer elapsed;
+
     ScanHandler(Configuration conf, TableName table) throws IOException {
       super(conf, table);
+      rows = registry.meter(Thread.currentThread().getName() + "_scan");
+      elapsed = registry.timer(Thread.currentThread().getName() + "_scan_elapsed");
     }
 
     @Override
@@ -67,28 +74,30 @@ public class ScanHandlerFactory extends HandlerFactory {
       try {
         Table target_table = connection.getTable(getTable());
         while (!isInterrupted()) {
-          String key = getKey(key_kind, key_length, true);
-          String k1 = getKey(key_kind, key_length, true);
-          String k2 = getKey(key_kind, key_length, true);
-          Pair<byte[], byte[]> boundaries = getBoundaries(k1, k2);
+          try (final Timer.Context context = elapsed.time()) {
+            String key = getKey(key_kind, key_length, true);
+            String k1 = getKey(key_kind, key_length, true);
+            String k2 = getKey(key_kind, key_length, true);
+            Pair<byte[], byte[]> boundaries = getBoundaries(k1, k2);
 
-          Scan scan = new Scan();
-          scan.withStartRow(boundaries.getFirst());
-          scan.withStopRow(boundaries.getSecond());
-          scan.setCacheBlocks(false);
-          scan.addColumn(Bytes.toBytes(family), Bytes.toBytes("q"));
-          if (hbase_conf.getBoolean(REVERSE_ALLOWED, false)) {
-            scan.setReversed(random.nextInt(2) != 0);
-          }
-          ResultScanner scanner = target_table.getScanner(scan);
-          for (Result result = scanner.next(); result != null; result = scanner.next()) {
-            if (result.isEmpty()) {
-            } else {
-              byte[] value = result.getValue(Bytes.toBytes(family), Bytes.toBytes("q"));
-              if (hbase_conf.getBoolean(RESULT_VERIFICATION, false)) {
-                if (value_kind == VALUE_KIND.FIXED) {
-                  if (verifiedResult(value_kind, key, value)) {
-                  } else {
+            Scan scan = new Scan();
+            scan.withStartRow(boundaries.getFirst());
+            scan.withStopRow(boundaries.getSecond());
+            scan.addColumn(Bytes.toBytes(family), Bytes.toBytes("q"));
+            if (hbase_conf.getBoolean(REVERSE_ALLOWED, false)) {
+              scan.setReversed(random.nextInt(2) != 0);
+            }
+            ResultScanner scanner = target_table.getScanner(scan);
+            for (Result result = scanner.next(); result != null; result = scanner.next()) {
+              if (result.isEmpty()) {
+              } else {
+                byte[] value = result.getValue(Bytes.toBytes(family), Bytes.toBytes("q"));
+                rows.mark();
+                if (hbase_conf.getBoolean(RESULT_VERIFICATION, false)) {
+                  if (value_kind == VALUE_KIND.FIXED) {
+                    if (verifiedResult(value_kind, key, value)) {
+                    } else {
+                    }
                   }
                 }
               }

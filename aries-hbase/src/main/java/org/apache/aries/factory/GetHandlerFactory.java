@@ -66,7 +66,6 @@ public class GetHandlerFactory extends HandlerFactory {
 
             Get get = new Get(Bytes.toBytes(key));
             get.addColumn(Bytes.toBytes(family), Bytes.toBytes("q"));
-            get.setCacheBlocks(false);
 
             Result result = target_table.get(get);
             byte[] value = result.getValue(Bytes.toBytes(family), Bytes.toBytes("q"));
