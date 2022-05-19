@@ -102,7 +102,7 @@ public class ScanHandlerFactory extends HandlerFactory {
             }
           }
           long stop_time = System.nanoTime();
-          LOG.info(thread_name + " scans " + rows.getCount() + " in " + (stop_time - start_time) + "ns");
+          LOG.info(thread_name + " scans " + rows.getCount() + " rows in " + (stop_time - start_time) + " ns");
         }
       } catch (Exception e) {
         LOG.warning("Error occured " + e.getMessage());

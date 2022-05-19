@@ -64,7 +64,9 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
       IntParameter.newBuilder(getParameterPrefix() + ".report_interval").setDefaultValue(1)
                   .setDescription("The interval for metrics output to console, in seconds.")
                   .opt();
-
+  private final Parameter<Boolean> shared_connection =
+      BoolParameter.newBuilder(getParameterPrefix() + ".shared_connection", false)
+                   .setDescription("If set true, all connections in fact will share one connection underlying").opt();
 
   private final Object mutex = new Object();
   private final MetricRegistry registry = MetricRegistryInstance.getMetricRegistry();
@@ -92,6 +94,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     requisites.add(key_length);
     requisites.add(records_num);
     requisites.add(report_interval);
+    requisites.add(shared_connection);
   }
 
   @Override
@@ -105,6 +108,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     example(key_kind.key(), "NONE");
     example(records_num.key(), "10000");
     example(report_interval.key(), "10");
+    example(shared_connection.key(), "true");
   }
 
   @Override

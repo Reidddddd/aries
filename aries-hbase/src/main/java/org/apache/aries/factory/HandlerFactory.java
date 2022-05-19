@@ -16,7 +16,6 @@
 
 package org.apache.aries.factory;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import org.apache.aries.ConfigurationFactory;
@@ -29,7 +28,6 @@ import org.apache.aries.common.VALUE_KIND;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
@@ -54,6 +52,7 @@ public abstract class HandlerFactory {
       if (parameter.key().contains(BaseHandler.KEY_LENGTH)) hbase_conf.setInt(BaseHandler.KEY_LENGTH, (Integer) parameter.value());
       if (parameter.key().contains(BaseHandler.VALUE_KINE)) hbase_conf.setEnum(BaseHandler.VALUE_KINE, (VALUE_KIND) parameter.value());
       if (parameter.key().contains(BaseHandler.RECORDS_NUM)) hbase_conf.setInt(BaseHandler.RECORDS_NUM, (Integer) parameter.value());
+      if (parameter.key().contains(BaseHandler.SHARED_CONNECTION)) hbase_conf.setBoolean(BaseHandler.SHARED_CONNECTION, (Boolean) parameter.value());
     }
   }
 
@@ -66,6 +65,7 @@ public abstract class HandlerFactory {
     static final String KEY_LENGTH = "key_length";
     static final String VALUE_KINE = "value_kind";
     static final String RECORDS_NUM = "records_num";
+    static final String SHARED_CONNECTION = "shared_connection";
 
     protected static final Logger LOG = Logger.getLogger(BaseHandler.class.getName());
     protected static final MetricRegistry registry = MetricRegistryInstance.getMetricRegistry();
@@ -86,7 +86,11 @@ public abstract class HandlerFactory {
 
     public BaseHandler(Configuration conf, TableName table) throws IOException {
       hbase_conf = conf;
-      connection = ConnectionFactory.createConnection(hbase_conf);
+
+      boolean shared_connection = hbase_conf.getBoolean(SHARED_CONNECTION, false);
+      connection = shared_connection ?
+                   ConnectionFactory.getSharedConnection(hbase_conf) :
+                   ConnectionFactory.getSelfOwnedConnection(hbase_conf);
       LOG.info("Connection created " + connection + " for " + this.getClass().getSimpleName());
       this.table = table;
       family = hbase_conf.get(FAMILY);
