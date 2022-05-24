@@ -16,6 +16,7 @@
 
 package org.apache.aries.factory;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import org.apache.aries.ConfigurationFactory;
@@ -70,6 +71,7 @@ public abstract class HandlerFactory {
     protected static final Logger LOG = Logger.getLogger(BaseHandler.class.getName());
     protected static final MetricRegistry registry = MetricRegistryInstance.getMetricRegistry();
     protected static final Timer latency = registry.timer("latency");
+    protected static final Meter meter = registry.meter("event");
 
     protected volatile MessageDigest digest;
 
