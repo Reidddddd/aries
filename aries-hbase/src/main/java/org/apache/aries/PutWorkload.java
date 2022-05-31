@@ -60,17 +60,6 @@ public class PutWorkload extends BaseWorkload {
   }
 
   @Override
-  protected void midCheck() {
-    super.midCheck();
-    KEY_PREFIX prefix = (KEY_PREFIX) key_kind.value();
-    if (prefix == KEY_PREFIX.SEQ) {
-      if (random_ops.value()) {
-        throw new IllegalArgumentException("If use SEQ key kind, " + random_ops.key() + " must be set false");
-      }
-    }
-  }
-
-  @Override
   protected HandlerFactory initHandlerFactory(ToyConfiguration configuration, List<Parameter> parameters) {
     return new PutHandlerFactory(configuration, parameters);
   }

@@ -74,7 +74,6 @@ public class ScanHandlerFactory extends HandlerFactory {
         Table target_table = connection.getTable(getTable());
         while (!isInterrupted()) {
           long start_time = System.nanoTime();
-          String key = getKey(key_kind, key_length, true);
           String k1 = getKey(key_kind, key_length, true);
           String k2 = getKey(key_kind, key_length, true);
           Pair<byte[], byte[]> boundaries = getBoundaries(k1, k2);
@@ -95,7 +94,7 @@ public class ScanHandlerFactory extends HandlerFactory {
               meter.mark();
               if (hbase_conf.getBoolean(RESULT_VERIFICATION, false)) {
                 if (value_kind == VALUE_KIND.FIXED) {
-                  if (verifiedResult(value_kind, key, value)) {
+                  if (verifiedResult(value_kind, Bytes.toString(result.getRow()), value)) {
                   } else {
                   }
                 }
