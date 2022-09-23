@@ -19,6 +19,7 @@ package org.apache.aries.common;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;
 import org.apache.aries.AbstractHBaseToy;
+import org.apache.aries.PutWorkload;
 import org.apache.aries.ToyConfiguration;
 import org.apache.aries.factory.HandlerFactory;
 import org.apache.aries.factory.HandlerFactory.BaseHandler;
@@ -29,6 +30,7 @@ import org.apache.hadoop.hbase.client.Admin;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -77,6 +79,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
 
   private ExecutorService service;
   private BaseHandler[] handlers;
+  private CountDownLatch latch;
 
   protected TableName table;
   protected Admin admin;
@@ -123,12 +126,10 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
 
   protected abstract HandlerFactory initHandlerFactory(ToyConfiguration configuration, List<Parameter> parameters);
 
-  public class Callback {
-    public void finished() {
-      synchronized (mutex) {
-        mutex.notify();
-      }
-    }
+  public interface Callback {
+
+    public void onFinished();
+
   }
 
   @Override
@@ -154,10 +155,24 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
 
     reporter.start(report_interval.value(), TimeUnit.SECONDS);
 
+    // 1. Create Handler firsts
     handlers = new BaseHandler[num_connections.value()];
     for (int i = 0; i < handlers.length; i++) {
       handlers[i] = factory.createHandler(table);
-      handlers[i].setCallback(new Callback());
+    }
+    // 2. Create end callback if this is a PutWorkload
+    if (this.getClass().equals(PutWorkload.class)) {
+      latch = new CountDownLatch(num_connections.value());
+      for (int i = 0; i < handlers.length; i++) {
+        handlers[i].setCallback(() -> {
+          if (latch != null) {
+            latch.countDown();
+          }
+        });
+      }
+    }
+    // 3. Submit handlers
+    for (int i = 0; i < handlers.length; i++) {
       service.submit(handlers[i]);
     }
 
@@ -183,6 +198,22 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
         }
       }, 0);
     }
+
+    if (latch != null) {
+      service.submit(() -> {
+        try {
+          latch.await();
+        } catch (InterruptedException e) {
+          // igonre and just return
+          return;
+        }
+
+        synchronized (mutex) {
+          mutex.notify();
+        }
+      });
+    }
+
   }
 
   @Override

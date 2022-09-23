@@ -79,10 +79,12 @@ public class PutHandlerFactory extends HandlerFactory {
         mutator.flush();
         mutator.close();
       } catch (Exception e) {
-        LOG.warning("Error occured " + e.getMessage());
+        LOG.warning("Error occured!");
+        e.printStackTrace();
       } finally {
-        LOG.info("Put handler finished first within the limited time");
-        callback.finished();
+        if (callback != null) {
+          callback.onFinished();
+        }
       }
     }
 
