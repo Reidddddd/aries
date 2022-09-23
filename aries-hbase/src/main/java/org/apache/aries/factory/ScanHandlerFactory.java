@@ -89,7 +89,7 @@ public class ScanHandlerFactory extends HandlerFactory {
           if (hbase_conf.getBoolean(REVERSE_ALLOWED, false)) {
             scan.setReversed(random.nextInt(2) != 0);
           }
-          LOG.info(scan.toString());
+          LOG.info(scan + " reversed: " + scan.isReversed());
 
           ResultScanner scanner = target_table.getScanner(scan);
           for (Result result = scanner.next(); result != null; result = scanner.next()) {
@@ -111,7 +111,9 @@ public class ScanHandlerFactory extends HandlerFactory {
             }
           }
           long stop_time = System.nanoTime();
-          LOG.info(thread_name + " scans " + rows.getCount() + " rows in " + (stop_time - start_time) + " ns");
+          if (rows != null) {
+            LOG.info(thread_name + " scans " + rows.getCount() + " rows in " + (stop_time - start_time) + " ns");
+          }
         }
       } catch (Exception e) {
         LOG.warning("Error occured!");
