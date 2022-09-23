@@ -89,7 +89,6 @@ public class ScanHandlerFactory extends HandlerFactory {
           if (hbase_conf.getBoolean(REVERSE_ALLOWED, false)) {
             scan.setReversed(random.nextInt(2) != 0);
           }
-          LOG.info(scan + " reversed: " + scan.isReversed());
 
           ResultScanner scanner = target_table.getScanner(scan);
           for (Result result = scanner.next(); result != null; result = scanner.next()) {
