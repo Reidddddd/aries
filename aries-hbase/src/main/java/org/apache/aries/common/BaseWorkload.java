@@ -123,6 +123,14 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
 
   protected abstract HandlerFactory initHandlerFactory(ToyConfiguration configuration, List<Parameter> parameters);
 
+  public class Callback {
+    public void finished() {
+      synchronized (mutex) {
+        mutex.notify();
+      }
+    }
+  }
+
   @Override
   protected void buildToy(ToyConfiguration configuration) throws Exception {
     super.buildToy(configuration);
@@ -149,6 +157,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
     handlers = new BaseHandler[num_connections.value()];
     for (int i = 0; i < handlers.length; i++) {
       handlers[i] = factory.createHandler(table);
+      handlers[i].setCallback(new Callback());
       service.submit(handlers[i]);
     }
 

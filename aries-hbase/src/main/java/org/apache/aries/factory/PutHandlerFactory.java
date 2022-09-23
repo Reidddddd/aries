@@ -80,6 +80,9 @@ public class PutHandlerFactory extends HandlerFactory {
         mutator.close();
       } catch (Exception e) {
         LOG.warning("Error occured " + e.getMessage());
+      } finally {
+        LOG.info("Put handler finished first within the limited time");
+        callback.finished();
       }
     }
 

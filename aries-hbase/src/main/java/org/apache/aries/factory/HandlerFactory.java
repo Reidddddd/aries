@@ -21,6 +21,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import org.apache.aries.ConfigurationFactory;
 import org.apache.aries.ToyConfiguration;
+import org.apache.aries.common.BaseWorkload.Callback;
 import org.apache.aries.common.KEY_PREFIX;
 import org.apache.aries.common.MetricRegistryInstance;
 import org.apache.aries.common.Parameter;
@@ -83,6 +84,7 @@ public abstract class HandlerFactory {
     protected final int key_length;
     protected final VALUE_KIND value_kind;
     protected final int records_num;
+    protected Callback callback;
 
     private final int pad_length;
 
@@ -175,6 +177,11 @@ public abstract class HandlerFactory {
     protected TableName getTable() {
       return table;
     }
+
+    public void setCallback(Callback callback) {
+      this.callback = callback;
+    }
+
   }
 
 }
