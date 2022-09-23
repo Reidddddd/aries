@@ -79,13 +79,16 @@ public class GetHandlerFactory extends HandlerFactory {
               if (value_kind == VALUE_KIND.FIXED) {
                 if (!verifiedResult(value_kind, key, value)) {
                   WRONG_VALUE.inc();
+                } else {
+                  CORRECT_VALUE.inc();
                 }
               }
             }
           }
         }
       } catch (Exception e) {
-        LOG.warning("Error occured " + e.getMessage());
+        LOG.warning("Error occured!");
+        e.printStackTrace();
       }
     }
 

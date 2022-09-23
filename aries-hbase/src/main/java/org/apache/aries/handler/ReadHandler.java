@@ -27,6 +27,7 @@ public abstract class ReadHandler extends BaseHandler {
 
   protected static final Counter EMPTY_VALUE = registry.counter("Empty_Value_Read");
   protected static final Counter WRONG_VALUE = registry.counter("Wrong_Value_Read");
+  protected static final Counter CORRECT_VALUE = registry.counter("Correct_Value_Read");
 
   public ReadHandler(Configuration conf, TableName table) throws IOException {
     super(conf, table);

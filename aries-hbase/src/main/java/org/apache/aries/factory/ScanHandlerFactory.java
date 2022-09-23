@@ -82,7 +82,6 @@ public class ScanHandlerFactory extends HandlerFactory {
           String k1 = getKey(key_kind, key_length, true);
           String k2 = getKey(key_kind, key_length, true);
           Pair<byte[], byte[]> boundaries = getBoundaries(k1, k2);
-
           Scan scan = new Scan();
           scan.withStartRow(boundaries.getFirst());
           scan.withStopRow(boundaries.getSecond());
@@ -90,6 +89,8 @@ public class ScanHandlerFactory extends HandlerFactory {
           if (hbase_conf.getBoolean(REVERSE_ALLOWED, false)) {
             scan.setReversed(random.nextInt(2) != 0);
           }
+          LOG.info(scan.toString());
+
           ResultScanner scanner = target_table.getScanner(scan);
           for (Result result = scanner.next(); result != null; result = scanner.next()) {
             if (result.isEmpty()) {
@@ -102,6 +103,8 @@ public class ScanHandlerFactory extends HandlerFactory {
                 if (value_kind == VALUE_KIND.FIXED) {
                   if (!verifiedResult(value_kind, Bytes.toString(result.getRow()), value)) {
                     WRONG_VALUE.inc();
+                  } else {
+                    CORRECT_VALUE.inc();
                   }
                 }
               }
@@ -111,7 +114,8 @@ public class ScanHandlerFactory extends HandlerFactory {
           LOG.info(thread_name + " scans " + rows.getCount() + " rows in " + (stop_time - start_time) + " ns");
         }
       } catch (Exception e) {
-        LOG.warning("Error occured " + e.getMessage());
+        LOG.warning("Error occured!");
+        e.printStackTrace();
       }
     }
 
