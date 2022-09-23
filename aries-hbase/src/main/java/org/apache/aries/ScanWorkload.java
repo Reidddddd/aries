@@ -32,12 +32,16 @@ public class ScanWorkload extends BaseWorkload {
   private final Parameter<Boolean> result_verification =
       BoolParameter.newBuilder(getParameterPrefix() + ".result_verification", false)
                    .setDescription("If set true, there will be verification for the returned results").opt();
+  private final Parameter<Boolean> metrics_each_scan =
+      BoolParameter.newBuilder(getParameterPrefix() + ".metrics_each_scan", false)
+                   .setDescription("If set true, there will a rows metrics for each thread's scan").opt();
 
   @Override
   public void requisite(List<Parameter> requisites) {
     super.requisite(requisites);
     requisites.add(reverse_scan);
     requisites.add(result_verification);
+    requisites.add(metrics_each_scan);
   }
 
   @Override
@@ -45,6 +49,7 @@ public class ScanWorkload extends BaseWorkload {
     super.exampleConfiguration();
     example(reverse_scan.key(), "false");
     example(result_verification.key(), "false");
+    example(metrics_each_scan.key(), "false");
   }
 
   @Override

@@ -20,6 +20,7 @@ import com.codahale.metrics.Timer;
 import org.apache.aries.ToyConfiguration;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.VALUE_KIND;
+import org.apache.aries.handler.ReadHandler;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Get;
@@ -46,7 +47,7 @@ public class GetHandlerFactory extends HandlerFactory {
     return new GetHandler(hbase_conf, table);
   }
 
-  public static class GetHandler extends BaseHandler {
+  public static class GetHandler extends ReadHandler {
 
     public static final String RANDOM_OPS = "random_key";
 
@@ -61,18 +62,23 @@ public class GetHandlerFactory extends HandlerFactory {
       try {
         Table target_table = connection.getTable(getTable());
         while (!isInterrupted()) {
-          try (final Timer.Context context = latency.time()) {
+          try (final Timer.Context context = LATENCY.time()) {
             String key = getKey(key_kind, key_length, hbase_conf.getBoolean(RANDOM_OPS, true));
 
             Get get = new Get(Bytes.toBytes(key));
             get.addColumn(Bytes.toBytes(family), Bytes.toBytes("q"));
 
             Result result = target_table.get(get);
+            if (result.isEmpty()) {
+              EMPTY_VALUE.inc();
+              continue;
+            }
+
             byte[] value = result.getValue(Bytes.toBytes(family), Bytes.toBytes("q"));
             if (hbase_conf.getBoolean(RESULT_VERIFICATION, false)) {
               if (value_kind == VALUE_KIND.FIXED) {
-                if (verifiedResult(value_kind, key, value)) {
-                } else {
+                if (!verifiedResult(value_kind, key, value)) {
+                  WRONG_VALUE.inc();
                 }
               }
             }

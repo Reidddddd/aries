@@ -64,7 +64,7 @@ public class PutHandlerFactory extends HandlerFactory {
       try {
         mutator = connection.getBufferedMutator(param);
         while (!isInterrupted() && sequence.get() <= records_num) {
-          try (final Timer.Context context = latency.time()) {
+          try (final Timer.Context context = LATENCY.time()) {
             String k = getKey(key_kind, key_length, hbase_conf.getBoolean(RANDOM_OPS, true));
             byte[] value = getValue(value_kind, k, hbase_conf.getInt(VALUE_SIZE, 0));
             Put put = new Put(Bytes.toBytes(k));

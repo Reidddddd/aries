@@ -22,6 +22,7 @@ import org.apache.aries.ToyConfiguration;
 import org.apache.aries.common.KEY_PREFIX;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.VALUE_KIND;
+import org.apache.aries.handler.ReadHandler;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.BufferedMutator;
@@ -46,6 +47,7 @@ public class ScanHandlerFactory extends HandlerFactory {
     for (Parameter parameter : parameters) {
       if (parameter.key().contains(ScanHandler.REVERSE_ALLOWED))     hbase_conf.setBoolean(ScanHandler.REVERSE_ALLOWED, (Boolean) parameter.value());
       if (parameter.key().contains(ScanHandler.RESULT_VERIFICATION)) hbase_conf.setBoolean(ScanHandler.RESULT_VERIFICATION, (Boolean) parameter.value());
+      if (parameter.key().contains(ScanHandler.METRICS_INDIVIDUAL_SCAN)) hbase_conf.setBoolean(ScanHandler.METRICS_INDIVIDUAL_SCAN, (Boolean) parameter.value());
     }
   }
 
@@ -54,10 +56,11 @@ public class ScanHandlerFactory extends HandlerFactory {
     return new ScanHandler(hbase_conf, table);
   }
 
-  public static class ScanHandler extends BaseHandler {
+  public static class ScanHandler extends ReadHandler {
 
     public static final String REVERSE_ALLOWED = "reverse_scan_allowed";
     public static final String RESULT_VERIFICATION = "result_verification";
+    public static final String METRICS_INDIVIDUAL_SCAN = "metrics_each_scan";
     final Random random = new Random();
 
     private Meter rows;
@@ -69,7 +72,9 @@ public class ScanHandlerFactory extends HandlerFactory {
     @Override
     public void run() {
       String thread_name = Thread.currentThread().getName();
-      rows = registry.meter(thread_name + "_scan");
+      if (hbase_conf.getBoolean(METRICS_INDIVIDUAL_SCAN, false)) {
+        rows = registry.meter(thread_name + "_scan_rows");
+      }
       try {
         Table target_table = connection.getTable(getTable());
         while (!isInterrupted()) {
@@ -88,14 +93,15 @@ public class ScanHandlerFactory extends HandlerFactory {
           ResultScanner scanner = target_table.getScanner(scan);
           for (Result result = scanner.next(); result != null; result = scanner.next()) {
             if (result.isEmpty()) {
+              EMPTY_VALUE.inc();
             } else {
               byte[] value = result.getValue(Bytes.toBytes(family), Bytes.toBytes("q"));
-              rows.mark();
+              if (rows != null) rows.mark();
               meter.mark();
               if (hbase_conf.getBoolean(RESULT_VERIFICATION, false)) {
                 if (value_kind == VALUE_KIND.FIXED) {
-                  if (verifiedResult(value_kind, Bytes.toString(result.getRow()), value)) {
-                  } else {
+                  if (!verifiedResult(value_kind, Bytes.toString(result.getRow()), value)) {
+                    WRONG_VALUE.inc();
                   }
                 }
               }
