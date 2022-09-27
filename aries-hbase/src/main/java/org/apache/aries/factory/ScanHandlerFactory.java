@@ -97,7 +97,7 @@ public class ScanHandlerFactory extends HandlerFactory {
             } else {
               byte[] value = result.getValue(Bytes.toBytes(family), Bytes.toBytes("q"));
               if (rows != null) rows.mark();
-              meter.mark();
+              READ_ROW.mark();
               if (hbase_conf.getBoolean(RESULT_VERIFICATION, false)) {
                 if (value_kind == VALUE_KIND.FIXED) {
                   if (!verifiedResult(value_kind, Bytes.toString(result.getRow()), value)) {

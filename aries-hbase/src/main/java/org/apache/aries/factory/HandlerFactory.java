@@ -73,7 +73,7 @@ public abstract class HandlerFactory {
     protected static final Logger LOG = Logger.getLogger(BaseHandler.class.getName());
     protected static final MetricRegistry registry = MetricRegistryInstance.getMetricRegistry();
     protected static final Timer LATENCY = registry.timer("Latency");
-    protected static final Meter meter = registry.meter("Read_Rows");
+    protected static final Meter READ_ROW = registry.meter("Read_Rows");
 
     protected volatile MessageDigest digest;
 
