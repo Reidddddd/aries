@@ -18,7 +18,9 @@ package org.apache.aries;
 
 import org.apache.aries.action.Action;
 import org.apache.aries.action.RestartBase;
+import org.apache.aries.action.RestartBase.Signal;
 import org.apache.aries.action.RestartRegionServer;
+import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.LongParameter;
 import org.apache.aries.common.Parameter;
@@ -54,16 +56,14 @@ public class ChaosRunner extends AbstractHBaseToy {
   public final Parameter<String> local_exe_path =
       StringParameter.newBuilder(getParameterPrefix() + "." + RestartBase.REMOTE_SSH_EXE_PATH)
                      .setDescription("Local path to execute remote SSH").opt();
+  private final Parameter<Enum> kill_signal =
+      EnumParameter.newBuilder(getParameterPrefix() + "." + RestartBase.KILL_SIGNAL, Signal.SIGKILL, Signal.class)
+                   .setDescription("Kill signal for stopping processes, supports SIGKILL or SIGTERM only, SIGKILL by default")
+                   .opt();
   // RestartRegionServer
-  public final Parameter<String> stop_rs_cmd =
-      StringParameter.newBuilder(getParameterPrefix() + "." + RestartRegionServer.RS_STOP)
-                     .setDescription("Command to stop regionserver").opt();
   public final Parameter<String> start_rs_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_START)
                      .setDescription("Command to start regionserver").opt();
-  private final Parameter<String> check_rs_alive_cmd =
-      StringParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_ALIVE)
-                     .setDescription("Command to check regionserver alive").opt();
   private final Parameter<Long> chao_rs_timeout=
       LongParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_TIMEOUT).setDefaultValue(0L)
                    .setDescription("Timeout waiting for regionserver to dead or alive, in seconds").opt();
@@ -99,10 +99,9 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(running_time);
 
     requisites.add(local_exe_path);
+    requisites.add(kill_signal);
 
-    requisites.add(stop_rs_cmd);
     requisites.add(start_rs_cmd);
-    requisites.add(check_rs_alive_cmd);
     requisites.add(chao_rs_timeout);
   }
 
@@ -113,10 +112,9 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(running_time.key(), "6000");
 
     example(local_exe_path.key(), "/home/util/remote-ssh");
+    example(kill_signal.key(), "SIGKILL");
 
-    example(stop_rs_cmd.key(), "sudo systemctl stop regionserver");
     example(start_rs_cmd.key(), "sudo systemctl start regionserver");
-    example(check_rs_alive_cmd.key(), "jps | grep regionserver");
     example(chao_rs_timeout.key(), "10");
   }
 

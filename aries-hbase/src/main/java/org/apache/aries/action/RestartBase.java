@@ -25,16 +25,17 @@ import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.util.Threads;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 public abstract class RestartBase extends Action {
 
-  public static String REMOTE_SSH_EXE_PATH = "remote_ssh.exe.path";
+  public static String REMOTE_SSH_EXE_PATH = "restart_base_action.remote_ssh.exe.path";
+  public static String KILL_SIGNAL = "restart_base_action.kill.signal";
 
   enum ServiceType {
-    HBASE_MASTER("Master"),
-    HBASE_REGIONSERVER("RegionServer");
+    MASTER("Master"),
+    REGIONSERVER("RegionServer");
 
     private String name;
 
@@ -42,23 +43,27 @@ public abstract class RestartBase extends Action {
       this.name = name;
     }
 
-    public String getName() {
-      return name;
+    public String procName() {
+      return name.toLowerCase(Locale.ROOT);
     }
 
-    @Override
-    public String toString() {
-      return getName();
+    public String service() {
+      return name;
     }
+  }
+
+  public enum Signal {
+    SIGKILL, SIGTERM
   }
 
   private final Random random = new Random();
 
   protected ServiceType service_type;
+  protected Signal signal;
 
   protected Admin admin;
 
-  private String remoteSSHExePath;
+  private String remote_ssh_exe_path;
 
   public RestartBase() {}
 
@@ -66,7 +71,8 @@ public abstract class RestartBase extends Action {
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
     admin = connection.getAdmin();
-    remoteSSHExePath = configuration.get("cr." + REMOTE_SSH_EXE_PATH);
+    remote_ssh_exe_path = configuration.get("cr." + REMOTE_SSH_EXE_PATH);
+    signal = configuration.getEnum("cr." + KILL_SIGNAL, Signal.SIGKILL);
   }
 
   @Override
@@ -80,18 +86,18 @@ public abstract class RestartBase extends Action {
     stopProcess(target_server);
     waitingStopped(target_server);
     startProcess(target_server);
-    checkStarted(target_server);
+    waitingStarted(target_server);
 
     return 0;
   }
 
   private void waitingStopped(ServerName server) throws IOException {
-    LOG.info("Waiting for " + service_type.getName() + " to stop on " + server.getHostname());
+    LOG.info("Waiting for " + service_type.service() + " to stop on " + server.getHostname());
     long future = System.currentTimeMillis() + getTimeout();
 
     while (System.currentTimeMillis() < future) {
       if (!checkAlive(server.getHostname())) {
-        LOG.info(service_type.getName() + " on " + server.getHostname() + " is stopped");
+        LOG.info(service_type.service() + " on " + server.getHostname() + " is stopped");
         return;
       }
       Threads.sleep(100);
@@ -103,42 +109,50 @@ public abstract class RestartBase extends Action {
 
   private boolean checkAlive(String hostname) throws IOException {
     RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
-    RemoteSSH remote_ssh = builder.setExePath(remoteSSHExePath)
-                                  .setCommand(getCheckAliveCommand())
+    RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
+                                  .setCommand(isRunningCommand(service_type))
                                   .setRemoteHost(hostname)
                                   .build();
     remote_ssh.run();
-    return Integer.parseInt(remote_ssh.getOutput().trim()) > 0;
+    return remote_ssh.getOutput().trim().length() > 0;
   }
 
   private void startProcess(ServerName server) throws IOException {
-    LOG.info("Starting " + service_type.getName() + " on " + server.getHostname());
+    LOG.info("Starting " + service_type.service() + " on " + server.getHostname());
     RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
-    RemoteSSH remote_ssh = builder.setExePath(remoteSSHExePath)
-                                  .setCommand(getStartCommand())
+    RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
+                                  .setCommand(startCommand())
                                   .setRemoteHost(server.getHostname())
                                   .build();
     remote_ssh.run();
   }
 
   private void stopProcess(ServerName server) throws IOException {
-    LOG.info("Stopping " + service_type.getName() + " on " + server.getHostname());
+    LOG.info("Stopping " + service_type.service() + " on " + server.getHostname());
     RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
-    RemoteSSH remote_ssh = builder.setExePath(remoteSSHExePath)
-                                  .setCommand(getStopCommand())
+    RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
+                                  .setCommand(signalCommand(service_type, signal))
                                   .setRemoteHost(server.getHostname())
                                   .build();
     remote_ssh.run();
   }
 
-  public abstract String getStartCommand();
+  protected String findPidCommand(ServiceType service) {
+    return String.format("ps ux | grep proc_%s | grep -v grep | tr -s ' ' | cut -d ' ' -f2", service.procName());
+  }
 
-  public abstract String getStopCommand();
+  public String isRunningCommand(ServiceType service) {
+    return findPidCommand(service);
+  }
 
-  public abstract String getCheckAliveCommand();
+  protected String signalCommand(ServiceType service, Signal signal) {
+    return String.format("%s | xargs kill -s %s", findPidCommand(service), signal);
+  }
+
+  public abstract String startCommand();
 
   public abstract long getTimeout();
 
-  protected abstract void checkStarted(ServerName target_server) throws IOException;
+  protected abstract void waitingStarted(ServerName target_server) throws IOException;
 
 }
