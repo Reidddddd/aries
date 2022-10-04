@@ -60,13 +60,19 @@ public class ChaosRunner extends AbstractHBaseToy {
       EnumParameter.newBuilder(getParameterPrefix() + "." + RestartBase.KILL_SIGNAL, Signal.SIGKILL, Signal.class)
                    .setDescription("Kill signal for stopping processes, supports SIGKILL or SIGTERM only, SIGKILL by default")
                    .opt();
+  private final Parameter<Integer> sleep_a_while =
+      IntParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.SLEEP_A_WHILE).setDefaultValue(0)
+                  .setDescription("Sleep for seconds before executing start command").opt();
   // RestartRegionServer
   public final Parameter<String> start_rs_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_START)
                      .setDescription("Command to start regionserver").opt();
-  private final Parameter<Long> chao_rs_timeout=
-      LongParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_TIMEOUT).setDefaultValue(0L)
-                   .setDescription("Timeout waiting for regionserver to dead or alive, in seconds").opt();
+  public final Parameter<String> check_rs_stopped_cmd =
+      StringParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_CHECK_STOPPED_COMMAND)
+                     .setDescription("Command to check whether regionserver is dead").opt();
+  private final Parameter<Integer> chao_rs_timeout=
+      IntParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_TIMEOUT).setDefaultValue(0)
+                  .setDescription("Timeout waiting for regionserver to dead or alive, in seconds").opt();
 
   private final Random random = new Random();
 
@@ -100,9 +106,11 @@ public class ChaosRunner extends AbstractHBaseToy {
 
     requisites.add(local_exe_path);
     requisites.add(kill_signal);
+    requisites.add(sleep_a_while);
 
     requisites.add(start_rs_cmd);
     requisites.add(chao_rs_timeout);
+    requisites.add(check_rs_stopped_cmd);
   }
 
   @Override
@@ -113,16 +121,18 @@ public class ChaosRunner extends AbstractHBaseToy {
 
     example(local_exe_path.key(), "/home/util/remote-ssh");
     example(kill_signal.key(), "SIGKILL");
+    example(sleep_a_while.key(), "10");
 
     example(start_rs_cmd.key(), "sudo systemctl start regionserver");
     example(chao_rs_timeout.key(), "10");
+    example(check_rs_stopped_cmd.key(), "sudo systemctl is-active regionserver -q");
   }
 
   @Override
   protected int haveFun() throws Exception {
     boolean timer = running_time.value() != -1;
     long now = System.currentTimeMillis();
-    long future = now + TimeUnit.NANOSECONDS.convert(running_time.value(), TimeUnit.SECONDS);
+    long future = now + TimeUnit.MILLISECONDS.convert(running_time.value(), TimeUnit.SECONDS);
 
     List<Future> futures = new LinkedList<>();
 
@@ -147,7 +157,11 @@ public class ChaosRunner extends AbstractHBaseToy {
           }
         }
 
-        if (noRelease) Thread.sleep(TimeUnit.MILLISECONDS.convert(1, TimeUnit.SECONDS));
+        if (noRelease) Thread.sleep(TimeUnit.MILLISECONDS.convert(5, TimeUnit.SECONDS));
+        else {
+          LOG.info("--------------- Sleep(2s) before next chaos action ---------------");
+          Thread.sleep(TimeUnit.MILLISECONDS.convert(2, TimeUnit.SECONDS));
+        }
       }
     } catch (Exception e) {
       LOG.info("Abort ChaosRunner due to " + e.getMessage());

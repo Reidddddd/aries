@@ -19,7 +19,6 @@ package org.apache.aries;
 import org.apache.hadoop.util.Shell.ShellCommandExecutor;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 public class RemoteSSH {
@@ -34,12 +33,11 @@ public class RemoteSSH {
   }
 
   public void run() throws IOException {
-    LOG.info("Executing " + Arrays.toString(exe.getExecString()));
     exe.execute();
   }
 
-  public String getOutput() {
-    return exe.getOutput();
+  public int exitCode() {
+    return exe.getExitCode();
   }
 
   public static class RemoteSSHBuilder {

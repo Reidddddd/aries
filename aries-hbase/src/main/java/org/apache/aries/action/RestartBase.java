@@ -22,16 +22,17 @@ import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.util.Threads;
 
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public abstract class RestartBase extends Action {
 
   public static String REMOTE_SSH_EXE_PATH = "restart_base_action.remote_ssh.exe.path";
-  public static String KILL_SIGNAL = "restart_base_action.kill.signal";
+  public static String         KILL_SIGNAL = "restart_base_action.kill.signal";
+  public static String       SLEEP_A_WHILE = "restart_base_action.sleep.seconds.before_start";
 
   enum ServiceType {
     MASTER("Master"),
@@ -60,19 +61,19 @@ public abstract class RestartBase extends Action {
 
   protected ServiceType service_type;
   protected Signal signal;
-
+  protected int sleep_a_while;
   protected Admin admin;
-
-  private String remote_ssh_exe_path;
+  protected String remote_ssh_exe_path;
 
   public RestartBase() {}
 
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
-    admin = connection.getAdmin();
+                  admin = connection.getAdmin();
     remote_ssh_exe_path = configuration.get("cr." + REMOTE_SSH_EXE_PATH);
-    signal = configuration.getEnum("cr." + KILL_SIGNAL, Signal.SIGKILL);
+                 signal = configuration.getEnum("cr." + KILL_SIGNAL, Signal.SIGKILL);
+          sleep_a_while = configuration.getInt("cr." + SLEEP_A_WHILE, 1);
   }
 
   @Override
@@ -85,36 +86,11 @@ public abstract class RestartBase extends Action {
 
     stopProcess(target_server);
     waitingStopped(target_server);
+    Thread.sleep(getTimeoutInMilliSeconds(sleep_a_while));
     startProcess(target_server);
     waitingStarted(target_server);
 
     return 0;
-  }
-
-  private void waitingStopped(ServerName server) throws IOException {
-    LOG.info("Waiting for " + service_type.service() + " to stop on " + server.getHostname());
-    long future = System.currentTimeMillis() + getTimeout();
-
-    while (System.currentTimeMillis() < future) {
-      if (!checkAlive(server.getHostname())) {
-        LOG.info(service_type.service() + " on " + server.getHostname() + " is stopped");
-        return;
-      }
-      Threads.sleep(100);
-    }
-    String err = "Timeout waiting for " + service_type.name + " to stop on " + server;
-    LOG.warning(err);
-    throw new IOException(err);
-  }
-
-  private boolean checkAlive(String hostname) throws IOException {
-    RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
-    RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
-                                  .setCommand(isRunningCommand(service_type))
-                                  .setRemoteHost(hostname)
-                                  .build();
-    remote_ssh.run();
-    return remote_ssh.getOutput().trim().length() > 0;
   }
 
   private void startProcess(ServerName server) throws IOException {
@@ -141,12 +117,12 @@ public abstract class RestartBase extends Action {
     return String.format("ps ux | grep proc_%s | grep -v grep | tr -s ' ' | cut -d ' ' -f2", service.procName());
   }
 
-  public String isRunningCommand(ServiceType service) {
-    return findPidCommand(service);
-  }
-
   protected String signalCommand(ServiceType service, Signal signal) {
     return String.format("%s | xargs kill -s %s", findPidCommand(service), signal);
+  }
+
+  protected long getTimeoutInMilliSeconds(int timeout_in_seconds) {
+    return TimeUnit.MILLISECONDS.convert(timeout_in_seconds, TimeUnit.SECONDS);
   }
 
   public abstract String startCommand();
@@ -154,5 +130,7 @@ public abstract class RestartBase extends Action {
   public abstract long getTimeout();
 
   protected abstract void waitingStarted(ServerName target_server) throws IOException;
+
+  protected abstract void waitingStopped(ServerName target_server) throws IOException;
 
 }

@@ -16,30 +16,33 @@
 
 package org.apache.aries.action;
 
+import org.apache.aries.RemoteSSH;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.util.Threads;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 public class RestartRegionServer extends RestartBase {
 
-  public static final String RS_START = "restart_regionserver.start_command";
-  public static final String RS_TIMEOUT = "restart_regionserver.timeout_in_seconds";
+  public static final String                 RS_START = "restart_regionserver.start_command";
+  public static final String               RS_TIMEOUT = "restart_regionserver.status.check.timeout_in_seconds";
+  public static final String RS_CHECK_STOPPED_COMMAND = "restart_regionserver.check.stopped_command";
 
   private String start_cmd;
-  private long timeout;
+  private String check_stopped_command;
+  private int timeout;
 
   public RestartRegionServer() {}
 
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
-    service_type = ServiceType.REGIONSERVER;
-    start_cmd = configuration.get("cr." + RS_START);
-    timeout = configuration.getLong("cr." + RS_TIMEOUT, 0);
+             service_type = ServiceType.REGIONSERVER;
+                start_cmd = configuration.get("cr." + RS_START);
+    check_stopped_command = configuration.get("cr." + RS_CHECK_STOPPED_COMMAND);
+                  timeout = configuration.getInt("cr." + RS_TIMEOUT, 0);
   }
 
   @Override
@@ -49,7 +52,7 @@ public class RestartRegionServer extends RestartBase {
 
   @Override
   public long getTimeout() {
-    return TimeUnit.MILLISECONDS.convert(timeout, TimeUnit.SECONDS);
+    return getTimeoutInMilliSeconds(timeout);
   }
 
   @Override
@@ -65,9 +68,33 @@ public class RestartRegionServer extends RestartBase {
           return;
         }
       }
-      Threads.sleep(100);
+      Threads.sleep(500);
     }
     String err = "Timeout waiting for " + service_type.service() + " to start on " + target_server.getHostname();
+    LOG.warning(err);
+    throw new IOException(err);
+  }
+
+  protected void waitingStopped(ServerName target_server) throws IOException {
+    LOG.info("Waiting for " + service_type.service() + " to stop on " + target_server.getHostname());
+    long future = System.currentTimeMillis() + getTimeout();
+
+    RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
+    RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
+                                  .setCommand(check_stopped_command)
+                                  .setRemoteHost(target_server.getHostname())
+                                  .build();
+    while (System.currentTimeMillis() < future) {
+      try {
+        remote_ssh.run();
+      } catch (Exception ece) {
+        if (remote_ssh.exitCode() == 0) continue;
+        LOG.info(service_type.service() + " on " + target_server.getHostname() + " is stopped");
+        return;
+      }
+      Threads.sleep(getTimeout() / 5);
+    }
+    String err = "Timeout waiting for " + service_type.service() + " to stop on " + target_server.getHostname();
     LOG.warning(err);
     throw new IOException(err);
   }
