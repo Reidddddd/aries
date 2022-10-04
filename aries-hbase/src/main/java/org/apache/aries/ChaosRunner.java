@@ -22,7 +22,6 @@ import org.apache.aries.action.RestartBase.Signal;
 import org.apache.aries.action.RestartRegionServer;
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.IntParameter;
-import org.apache.aries.common.LongParameter;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.StringArrayParameter;
 import org.apache.aries.common.StringParameter;
@@ -162,6 +161,10 @@ public class ChaosRunner extends AbstractHBaseToy {
           LOG.info("--------------- Sleep(2s) before next chaos action ---------------");
           Thread.sleep(TimeUnit.MILLISECONDS.convert(2, TimeUnit.SECONDS));
         }
+      }
+
+      for (Future remaining : futures) {
+        remaining.get();
       }
     } catch (Exception e) {
       LOG.info("Abort ChaosRunner due to " + e.getMessage());
