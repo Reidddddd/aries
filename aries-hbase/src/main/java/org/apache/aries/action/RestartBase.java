@@ -17,6 +17,7 @@
 package org.apache.aries.action;
 
 import org.apache.aries.RemoteSSH;
+import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.ServerName;
@@ -65,6 +66,8 @@ public abstract class RestartBase extends Action {
   protected Admin admin;
   protected String remote_ssh_exe_path;
 
+  private String error = "";
+
   public RestartBase() {}
 
   @Override
@@ -84,11 +87,16 @@ public abstract class RestartBase extends Action {
     int pick = random.nextInt(servers.length);
     ServerName target_server = servers[pick];
 
-    stopProcess(target_server);
-    waitingStopped(target_server);
-    Thread.sleep(getTimeoutInMilliSeconds(sleep_a_while));
-    startProcess(target_server);
-    waitingStarted(target_server);
+    try {
+      stopProcess(target_server);
+      waitingStopped(target_server);
+      Thread.sleep(getTimeoutInMilliSeconds(sleep_a_while));
+      startProcess(target_server);
+      waitingStarted(target_server);
+    } catch (Throwable t) {
+      LOG.warning(ToyUtils.buildError(t));
+      return 1;
+    }
 
     return 0;
   }

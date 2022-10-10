@@ -66,5 +66,16 @@ public final class ToyUtils {
     return leadingZero.append(to_be_padded).toString();
   }
 
+  public static String buildError(Throwable t) {
+    StringBuilder errorBuilder = new StringBuilder();
+    errorBuilder.append("cause: " + t.getCause() + "\n")
+                .append("message: " + t.getMessage() + "\n")
+                .append("stacktrace:" + "\n");
+    for (StackTraceElement ste : t.getStackTrace()) {
+      errorBuilder.append(ste);
+    }
+    return errorBuilder.toString();
+  }
+
 }
 

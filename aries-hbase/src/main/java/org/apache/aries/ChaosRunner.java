@@ -74,6 +74,7 @@ public class ChaosRunner extends AbstractHBaseToy {
                   .setDescription("Timeout waiting for regionserver to dead or alive, in seconds").opt();
 
   private final Random random = new Random();
+  private final int ERROR = 1;
 
   private ExecutorService exe = Executors.newCachedThreadPool();
   private Action[] chaos_actions;
@@ -133,41 +134,45 @@ public class ChaosRunner extends AbstractHBaseToy {
     long now = System.currentTimeMillis();
     long future = now + TimeUnit.MILLISECONDS.convert(running_time.value(), TimeUnit.SECONDS);
 
-    List<Future> futures = new LinkedList<>();
+    List<Future<Integer>> futures = new LinkedList<>();
 
-    try {
-      while (!timer || System.currentTimeMillis() < future) {
-        while (semaphore.availablePermits() > 0) {
-          int i = random.nextInt(chaos_actions.length);
-          semaphore.acquire(1);
-          Future<Integer> res = exe.submit(chaos_actions[i]);
-          futures.add(res);
-        }
 
-        Iterator<Future> it = futures.iterator();
-        boolean noRelease = true;
-        while (it.hasNext()) {
-          Future f = it.next();
-          if (f.isDone()) {
-            semaphore.release(1);
-            it.remove();
-            noRelease = false;
-            break;
+    while (!timer || System.currentTimeMillis() < future) {
+      while (semaphore.availablePermits() > 0) {
+        int i = random.nextInt(chaos_actions.length);
+        semaphore.acquire(1);
+        Future<Integer> res = exe.submit(chaos_actions[i]);
+        futures.add(res);
+      }
+
+      Iterator<Future<Integer>> it = futures.iterator();
+      boolean noRelease = true;
+      while (it.hasNext()) {
+        Future<Integer> f = it.next();
+        if (f.isDone()) {
+          semaphore.release(1);
+          it.remove();
+          if (f.get() == ERROR) {
+            LOG.warning("Exiting...");
+            System.exit(1);
           }
-        }
-
-        if (noRelease) Thread.sleep(TimeUnit.MILLISECONDS.convert(5, TimeUnit.SECONDS));
-        else {
-          LOG.info("--------------- Sleep(2s) before next chaos action ---------------");
-          Thread.sleep(TimeUnit.MILLISECONDS.convert(2, TimeUnit.SECONDS));
+          noRelease = false;
+          break;
         }
       }
 
-      for (Future remaining : futures) {
-        remaining.get();
+      if (noRelease) Thread.sleep(TimeUnit.MILLISECONDS.convert(5, TimeUnit.SECONDS));
+      else {
+        LOG.info("--------------- Sleep(2s) before next chaos action ---------------");
+        Thread.sleep(TimeUnit.MILLISECONDS.convert(2, TimeUnit.SECONDS));
       }
-    } catch (Exception e) {
-      LOG.info("Abort ChaosRunner due to " + e.getMessage());
+    }
+
+    for (Future<Integer> remaining : futures) {
+      if (remaining.get() == ERROR) {
+        LOG.warning("Exiting...");
+        System.exit(1);
+      }
     }
 
     return 0;
