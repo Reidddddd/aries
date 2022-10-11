@@ -58,7 +58,7 @@ public abstract class RestartBase extends Action {
     SIGKILL, SIGTERM
   }
 
-  private final Random random = new Random();
+  protected final Random random = new Random();
 
   protected ServiceType service_type;
   protected Signal signal;
@@ -79,13 +79,11 @@ public abstract class RestartBase extends Action {
           sleep_a_while = configuration.getInt("cr." + SLEEP_A_WHILE, 1);
   }
 
+  protected abstract ServerName pickTargetServer() throws Exception;
+
   @Override
   public Integer call() throws Exception {
-    ClusterStatus status = admin.getClusterStatus();
-    ServerName[] servers = status.getServers().toArray(new ServerName[0]);
-
-    int pick = random.nextInt(servers.length);
-    ServerName target_server = servers[pick];
+    ServerName target_server = pickTargetServer();
 
     try {
       stopProcess(target_server);
@@ -101,22 +99,22 @@ public abstract class RestartBase extends Action {
     return 0;
   }
 
-  private void startProcess(ServerName server) throws IOException {
-    LOG.info("Starting " + service_type.service() + " on " + server.getHostname());
+  private void startProcess(ServerName target_server) throws IOException {
+    LOG.info("Starting " + service_type.service() + " on " + target_server.getHostname());
     RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
     RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
                                   .setCommand(startCommand())
-                                  .setRemoteHost(server.getHostname())
+                                  .setRemoteHost(target_server.getHostname())
                                   .build();
     remote_ssh.run();
   }
 
-  private void stopProcess(ServerName server) throws IOException {
-    LOG.info("Stopping " + service_type.service() + " on " + server.getHostname());
+  private void stopProcess(ServerName target_server) throws IOException {
+    LOG.info("Stopping " + service_type.service() + " on " + target_server.getHostname());
     RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
     RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
                                   .setCommand(signalCommand(service_type, signal))
-                                  .setRemoteHost(server.getHostname())
+                                  .setRemoteHost(target_server.getHostname())
                                   .build();
     remote_ssh.run();
   }
