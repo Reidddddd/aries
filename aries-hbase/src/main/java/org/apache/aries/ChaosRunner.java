@@ -19,6 +19,7 @@ package org.apache.aries;
 import org.apache.aries.action.Action;
 import org.apache.aries.action.RestartBase;
 import org.apache.aries.action.RestartBase.Signal;
+import org.apache.aries.action.RestartMaster;
 import org.apache.aries.action.RestartRegionServer;
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.IntParameter;
@@ -72,6 +73,16 @@ public class ChaosRunner extends AbstractHBaseToy {
   private final Parameter<Integer> chao_rs_timeout=
       IntParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_TIMEOUT).setDefaultValue(0)
                   .setDescription("Timeout waiting for regionserver to dead or alive, in seconds").opt();
+  // RestartMaster
+  public final Parameter<String> start_mst_cmd =
+      StringParameter.newBuilder(getParameterPrefix() + "." +  RestartMaster.MS_START)
+                     .setDescription("Command to start master").opt();
+  public final Parameter<String> check_mst_stopped_cmd =
+      StringParameter.newBuilder(getParameterPrefix() + "." +  RestartMaster.MS_CHECK_STOPPED_COMMAND)
+                     .setDescription("Command to check whether master is dead").opt();
+  private final Parameter<Integer> chao_mst_timeout=
+      IntParameter.newBuilder(getParameterPrefix() + "." +  RestartMaster.MS_TIMEOUT).setDefaultValue(0)
+                  .setDescription("Timeout waiting for master to dead or alive, in seconds").opt();
 
   private final Random random = new Random();
   private final int ERROR = 1;
@@ -111,6 +122,10 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(start_rs_cmd);
     requisites.add(chao_rs_timeout);
     requisites.add(check_rs_stopped_cmd);
+
+    requisites.add(start_mst_cmd);
+    requisites.add(check_mst_stopped_cmd);
+    requisites.add(chao_mst_timeout);
   }
 
   @Override
@@ -126,6 +141,10 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(start_rs_cmd.key(), "sudo systemctl start regionserver");
     example(chao_rs_timeout.key(), "10");
     example(check_rs_stopped_cmd.key(), "sudo systemctl is-active regionserver -q");
+
+    example(start_mst_cmd.key(), "sudo systemctl start master");
+    example(chao_mst_timeout.key(), "120");
+    example(check_mst_stopped_cmd.key(), "sudo systemctl is-active master -q");
   }
 
   @Override

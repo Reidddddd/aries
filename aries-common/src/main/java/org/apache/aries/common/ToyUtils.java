@@ -67,12 +67,12 @@ public final class ToyUtils {
   }
 
   public static String buildError(Throwable t) {
-    StringBuilder errorBuilder = new StringBuilder();
-    errorBuilder.append("cause: " + t.getCause() + "\n")
-                .append("message: " + t.getMessage() + "\n")
-                .append("stacktrace:" + "\n");
+    StringBuilder errorBuilder = new StringBuilder(System.lineSeparator());
+    errorBuilder.append("cause: " + t.getCause() + System.lineSeparator())
+                .append("message: " + t.getMessage() + System.lineSeparator())
+                .append("stacktrace:" + System.lineSeparator());
     for (StackTraceElement ste : t.getStackTrace()) {
-      errorBuilder.append(ste);
+      errorBuilder.append(ste + System.lineSeparator());
     }
     return errorBuilder.toString();
   }

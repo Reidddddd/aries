@@ -19,7 +19,6 @@ package org.apache.aries.action;
 import org.apache.aries.RemoteSSH;
 import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;

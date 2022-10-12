@@ -18,32 +18,33 @@ package org.apache.aries.action;
 
 import org.apache.aries.RemoteSSH;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.ClusterStatus;
+import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ServerName;
+import org.apache.hadoop.hbase.client.ClusterConnection;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.util.Threads;
 
 import java.io.IOException;
 
-public class RestartRegionServer extends RestartBase {
+public class RestartMaster extends RestartBase {
 
-  public static final String                 RS_START = "restart_regionserver.start_command";
-  public static final String               RS_TIMEOUT = "restart_regionserver.status.check.timeout_in_seconds";
-  public static final String RS_CHECK_STOPPED_COMMAND = "restart_regionserver.check.stopped_command";
+  public static final String                 MS_START = "restart_master.start_command";
+  public static final String               MS_TIMEOUT = "restart_master.status.check.timeout_in_seconds";
+  public static final String MS_CHECK_STOPPED_COMMAND = "restart_master.check.stopped_command";
 
   private String start_cmd;
   private String check_stopped_command;
   private int timeout;
 
-  public RestartRegionServer() {}
+  public RestartMaster() {}
 
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
-             service_type = ServiceType.REGIONSERVER;
-                start_cmd = configuration.get("cr." + RS_START);
-    check_stopped_command = configuration.get("cr." + RS_CHECK_STOPPED_COMMAND);
-                  timeout = configuration.getInt("cr." + RS_TIMEOUT, 0);
+             service_type = ServiceType.MASTER;
+                start_cmd = configuration.get("cr." + MS_START);
+    check_stopped_command = configuration.get("cr." + MS_CHECK_STOPPED_COMMAND);
+                  timeout = configuration.getInt("cr." + MS_TIMEOUT, 0);
   }
 
   @Override
@@ -58,10 +59,7 @@ public class RestartRegionServer extends RestartBase {
 
   @Override
   protected ServerName pickTargetServer() throws Exception {
-    ClusterStatus status = admin.getClusterStatus();
-    ServerName[] servers = status.getServers().toArray(new ServerName[0]);
-
-    return servers[random.nextInt(servers.length)];
+    return admin.getClusterStatus().getMaster();
   }
 
   @Override
@@ -70,10 +68,10 @@ public class RestartRegionServer extends RestartBase {
     long future = System.currentTimeMillis() + getTimeout();
 
     while (System.currentTimeMillis() < future) {
-      for (ServerName server : admin.getClusterStatus().getServers()) {
-        if (server.getHostname().equals(target_server.getHostname()) &&
-            server.getPort() == target_server.getPort()) {
-          LOG.info(service_type.service() + " on " + server.getHostname() + " is started");
+      for (ServerName backup_master : admin.getClusterStatus().getBackupMasters()) {
+        if (backup_master.getHostname().equals(target_server.getHostname()) &&
+            backup_master.getPort() == target_server.getPort()) {
+          LOG.info(service_type.service() + " on " + target_server.getHostname() + " is started");
           return;
         }
       }
@@ -85,7 +83,6 @@ public class RestartRegionServer extends RestartBase {
   }
 
   protected void waitingStopped(ServerName target_server) throws IOException {
-    LOG.info("Waiting for " + service_type.service() + " to stop on " + target_server.getHostname());
     long future = System.currentTimeMillis() + getTimeout();
 
     RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
@@ -93,17 +90,42 @@ public class RestartRegionServer extends RestartBase {
                                   .setCommand(check_stopped_command)
                                   .setRemoteHost(target_server.getHostname())
                                   .build();
+
     while (System.currentTimeMillis() < future) {
       try {
-        remote_ssh.run();
-      } catch (Exception ece) {
-        if (remote_ssh.exitCode() == 0) continue;
-        LOG.info(service_type.service() + " on " + target_server.getHostname() + " is stopped");
-        return;
+        ((ClusterConnection)this.connection).getMaster();
+        try {
+          if (admin.getClusterStatus().getMaster().equals(target_server)) {
+            // double check
+            throw new IOException("Master hasn't switched yet");
+          }
+        } catch (Exception e) {
+          throw new IOException(e);
+        }
+        LOG.info("Master switched successfully");
+
+        // master switch, check process killed clean
+        LOG.info("Waiting for " + service_type.service() + " to stop on " + target_server.getHostname());
+        while (System.currentTimeMillis() < future) {
+          try {
+            remote_ssh.run();
+          } catch (Exception ece) {
+            if (remote_ssh.exitCode() == 0) continue;
+            LOG.info(service_type.service() + " on " + target_server.getHostname() + " is stopped");
+            return;
+          }
+          Threads.sleep(getTimeout() / 5);
+        }
+        String err = "Timeout waiting for " + service_type.service() + " to stop on " + target_server.getHostname();
+        LOG.warning(err);
+        throw new IOException(err);
+
+      } catch (IOException m) {
+        LOG.warning(m.getMessage());
       }
       Threads.sleep(getTimeout() / 5);
     }
-    String err = "Timeout waiting for " + service_type.service() + " to stop on " + target_server.getHostname();
+    String err = "Timeout waiting for active master switched";
     LOG.warning(err);
     throw new IOException(err);
   }
