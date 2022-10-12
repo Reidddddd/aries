@@ -19,6 +19,7 @@ package org.apache.aries;
 import org.apache.aries.action.Action;
 import org.apache.aries.action.RestartBase;
 import org.apache.aries.action.RestartBase.Signal;
+import org.apache.aries.action.RestartDataNode;
 import org.apache.aries.action.RestartMaster;
 import org.apache.aries.action.RestartRegionServer;
 import org.apache.aries.common.EnumParameter;
@@ -83,6 +84,16 @@ public class ChaosRunner extends AbstractHBaseToy {
   private final Parameter<Integer> chao_mst_timeout=
       IntParameter.newBuilder(getParameterPrefix() + "." +  RestartMaster.MS_TIMEOUT).setDefaultValue(0)
                   .setDescription("Timeout waiting for master to dead or alive, in seconds").opt();
+  // RestartDataNode
+  public final Parameter<String> start_dn_cmd =
+      StringParameter.newBuilder(getParameterPrefix() + "." +  RestartDataNode.DN_START)
+                     .setDescription("Command to start datanode").opt();
+  public final Parameter<String> check_dn_stopped_cmd =
+      StringParameter.newBuilder(getParameterPrefix() + "." +  RestartDataNode.DN_CHECK_STOPPED_COMMAND)
+                     .setDescription("Command to check whether datanode is dead").opt();
+  private final Parameter<Integer> chao_dn_timeout=
+      IntParameter.newBuilder(getParameterPrefix() + "." +  RestartDataNode.DN_TIMEOUT).setDefaultValue(0)
+                  .setDescription("Timeout waiting for datanode to dead or alive, in seconds").opt();
 
   private final Random random = new Random();
   private final int ERROR = 1;
@@ -126,6 +137,10 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(start_mst_cmd);
     requisites.add(check_mst_stopped_cmd);
     requisites.add(chao_mst_timeout);
+
+    requisites.add(start_dn_cmd);
+    requisites.add(check_dn_stopped_cmd);
+    requisites.add(chao_dn_timeout);
   }
 
   @Override
@@ -145,6 +160,10 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(start_mst_cmd.key(), "sudo systemctl start master");
     example(chao_mst_timeout.key(), "120");
     example(check_mst_stopped_cmd.key(), "sudo systemctl is-active master -q");
+
+    example(start_dn_cmd.key(), "sudo systemctl start datanode");
+    example(chao_dn_timeout.key(), "120");
+    example(check_dn_stopped_cmd.key(), "sudo systemctl is-active datanode -q");
   }
 
   @Override
