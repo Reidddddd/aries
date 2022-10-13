@@ -37,7 +37,8 @@ public abstract class RestartBase extends Action {
   enum ServiceType {
     MASTER("Master"),
     REGIONSERVER("RegionServer"),
-    DATANODE("DataNode");
+    DATANODE("DataNode"),
+    QuorumPeerMain("QuorumPeerMain");
 
     private String name;
 
