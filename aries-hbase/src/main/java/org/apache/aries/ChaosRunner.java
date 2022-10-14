@@ -16,6 +16,7 @@
 
 package org.apache.aries;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.aries.action.Action;
 import org.apache.aries.action.RestartBase;
 import org.apache.aries.action.RestartBase.Signal;
@@ -23,6 +24,8 @@ import org.apache.aries.action.RestartDataNode;
 import org.apache.aries.action.RestartMaster;
 import org.apache.aries.action.RestartRegionServer;
 import org.apache.aries.action.RestartZookeeper;
+import org.apache.aries.action.RollingRestartRegionServer;
+import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.Parameter;
@@ -65,7 +68,7 @@ public class ChaosRunner extends AbstractHBaseToy {
   private final Parameter<Integer> sleep_a_while =
       IntParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.SLEEP_A_WHILE).setDefaultValue(0)
                   .setDescription("Sleep for seconds before executing start command").opt();
-  // RestartRegionServer
+  // RestartRegionServer & RollingRestartRegionServer
   public final Parameter<String> start_rs_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_START)
                      .setDescription("Command to start regionserver").opt();
@@ -75,6 +78,22 @@ public class ChaosRunner extends AbstractHBaseToy {
   private final Parameter<Integer> chao_rs_timeout=
       IntParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_TIMEOUT).setDefaultValue(0)
                   .setDescription("Timeout waiting for regionserver to dead or alive, in seconds").opt();
+  private final Parameter<Integer> batch_max_dead=
+      IntParameter.newBuilder(getParameterPrefix() + "." +  RollingRestartRegionServer.RS_BATCH_MAX_DEAD)
+                  .setDefaultValue(2)
+                  .setDescription("Max number of dead regionserver while doing rolling restart").opt();
+  private final Parameter<Integer> batch_sleep_time=
+      IntParameter.newBuilder(getParameterPrefix() + "." +  RollingRestartRegionServer.RS_BATCH_SLEEP_BETWEEN)
+                  .setDefaultValue(2)
+                  .setDescription("Sleep time between batch operations, in seconds").opt();
+  private final Parameter<Boolean> meta_exclude =
+      BoolParameter.newBuilder(getParameterPrefix() + "." +  RollingRestartRegionServer.RS_BATCH_EXCLUDE_META, true)
+                   .setDescription("Whether meta regionserver should be excluded, during rolling restart, true by default.")
+                   .opt();
+  private final Parameter<Boolean> async_mode =
+      BoolParameter.newBuilder(getParameterPrefix() + "." +  RollingRestartRegionServer.RS_BATCH_ASYNC, true)
+                   .setDescription("Async mode will not wait for the stop action finished, true by default.")
+                   .opt();
   // RestartMaster
   public final Parameter<String> start_mst_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartMaster.MS_START)
@@ -95,7 +114,7 @@ public class ChaosRunner extends AbstractHBaseToy {
   // RestartZookeeper
   public final Parameter<String> start_zk_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartZookeeper.ZK_START)
-                     .setDescription("Command to zookeeper master").opt();
+                     .setDescription("Command to start zookeeper").opt();
   public final Parameter<String> check_zk_status_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartZookeeper.ZK_CHECK_STATUS_COMMAND)
                      .setDescription("Command to check whether zookeeper is alive or dead").opt();
@@ -141,6 +160,10 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(start_rs_cmd);
     requisites.add(chao_rs_timeout);
     requisites.add(check_rs_stopped_cmd);
+    requisites.add(batch_max_dead);
+    requisites.add(batch_sleep_time);
+    requisites.add(meta_exclude);
+    requisites.add(async_mode);
 
     requisites.add(start_mst_cmd);
     requisites.add(check_mst_stopped_cmd);
@@ -167,6 +190,10 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(start_rs_cmd.key(), "sudo systemctl start regionserver");
     example(chao_rs_timeout.key(), "10");
     example(check_rs_stopped_cmd.key(), "sudo systemctl is-active regionserver -q");
+    example(batch_max_dead.key(), "2");
+    example(batch_sleep_time.key(), "2");
+    example(meta_exclude.key(), "true");
+    example(async_mode.key(), "true");
 
     example(start_mst_cmd.key(), "sudo systemctl start master");
     example(chao_mst_timeout.key(), "120");

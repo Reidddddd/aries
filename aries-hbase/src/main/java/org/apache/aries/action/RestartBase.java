@@ -100,7 +100,7 @@ public abstract class RestartBase extends Action {
     return 0;
   }
 
-  private void startProcess(ServerName target_server) throws IOException {
+  protected void startProcess(ServerName target_server) throws IOException {
     LOG.info("Starting " + service_type.service() + " on " + target_server.getHostname());
     RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
     RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
@@ -110,7 +110,7 @@ public abstract class RestartBase extends Action {
     remote_ssh.run();
   }
 
-  private void stopProcess(ServerName target_server) throws IOException {
+  protected void stopProcess(ServerName target_server) throws IOException {
     LOG.info("Stopping " + service_type.service() + " on " + target_server.getHostname());
     RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
     RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
