@@ -28,10 +28,10 @@ import java.util.LinkedList;
 
 public class RollingRestartRegionServer extends RestartRegionServer {
 
-  public static final String   RS_BATCH_SLEEP_BETWEEN = "restart_batch_regionserver.sleep.between.action.time_in_seconds";
-  public static final String    RS_BATCH_EXCLUDE_META = "restart_batch_regionserver.exclude.meta.regionserver";
-  public static final String        RS_BATCH_MAX_DEAD = "restart_batch_regionserver.max.dead.servers";
-  public static final String           RS_BATCH_ASYNC = "restart_batch_regionserver.async.mode";
+  public static final String ROLLING_RS_SLEEP_BETWEEN = "rolling.restart_regionserver.sleep.between.action.time_in_seconds";
+  public static final String  ROLLING_RS_EXCLUDE_META = "rolling.restart_regionserver.exclude.meta.regionserver";
+  public static final String      ROLLING_RS_MAX_DEAD = "rolling.restart_regionserver.max.dead.servers";
+  public static final String         ROLLING_RS_ASYNC = "rolling.restart_regionserver.async.mode";
 
   private final LinkedList<ServerName> dead_servers = new LinkedList<>();
 
@@ -50,10 +50,10 @@ public class RollingRestartRegionServer extends RestartRegionServer {
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
-        sleep_between = configuration.getInt("cr." + RS_BATCH_SLEEP_BETWEEN, 0);
-             max_dead = configuration.getInt("cr." + RS_BATCH_MAX_DEAD, 3);
-         exclude_meta = configuration.getBoolean("cr." + RS_BATCH_EXCLUDE_META, true);
-                async = configuration.getBoolean("cr." + RS_BATCH_ASYNC, true);
+        sleep_between = configuration.getInt("cr." + ROLLING_RS_SLEEP_BETWEEN, 0);
+             max_dead = configuration.getInt("cr." + ROLLING_RS_MAX_DEAD, 3);
+         exclude_meta = configuration.getBoolean("cr." + ROLLING_RS_EXCLUDE_META, true);
+                async = configuration.getBoolean("cr." + ROLLING_RS_ASYNC, true);
     meta_regionserver = connection.getRegionLocator(TableName.META_TABLE_NAME)
                                   .getRegionLocation(HRegionInfo.FIRST_META_REGIONINFO.getRegionName())
                                   .getServerName();
