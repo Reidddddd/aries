@@ -16,7 +16,6 @@
 
 package org.apache.aries.action;
 
-import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ServerName;
@@ -73,58 +72,52 @@ public class RollingRestartRegionServer extends RestartRegionServer {
   }
 
   @Override
-  public Integer call() throws Exception {
+  protected void chaos() throws Exception {
     boolean just_start = true;
-    try {
-      while (dead_servers.size() < max_dead) {
-          if (just_start) just_start = false;
-        else Thread.sleep(getTimeoutInMilliSeconds(sleep_between));
 
-        ServerName target_server = pickTargetServer();
-        if (dead_servers.isEmpty()) {
+    while (dead_servers.size() < max_dead) {
+      if (just_start) just_start = false;
+      else Thread.sleep(getTimeoutInMilliSeconds(sleep_between));
+
+      ServerName target_server = pickTargetServer();
+      if (dead_servers.isEmpty()) {
+        stopProcess(target_server);
+        if (!async) waitingStopped(target_server);
+        dead_servers.add(target_server);
+        continue;
+      }
+
+      if (async && dead_servers.contains(target_server)) continue;
+
+      int act_code = random.nextInt(3);
+      Action action = act_code == 0 ? Action.START :
+                      act_code == 1 ? Action.STOP  : Action.DEFAULT;
+      switch (action) {
+        case START: {
+          ServerName start_server = dead_servers.removeFirst();
+          if (async) waitingStopped(start_server);
+          startProcess(start_server);
+          waitingStarted(start_server);
+          break;
+        }
+        case    STOP:
+        case DEFAULT: {
           stopProcess(target_server);
           if (!async) waitingStopped(target_server);
           dead_servers.add(target_server);
-          continue;
-        }
-
-        if (async && dead_servers.contains(target_server)) continue;
-
-        int act_code = random.nextInt(3);
-        Action action = act_code == 0 ? Action.START :
-                        act_code == 1 ? Action.STOP  : Action.DEFAULT;
-        switch (action) {
-          case START: {
-            ServerName start_server = dead_servers.removeFirst();
-            if (async) waitingStopped(start_server);
-            startProcess(start_server);
-            waitingStarted(start_server);
-            break;
-          }
-          case    STOP:
-          case DEFAULT: {
-            stopProcess(target_server);
-            if (!async) waitingStopped(target_server);
-            dead_servers.add(target_server);
-            break;
-          }
+          break;
         }
       }
-
-      for (ServerName dead_server : dead_servers) {
-        waitingStopped(dead_server);
-        startProcess(dead_server);
-      }
-      for (ServerName dead_server : dead_servers) {
-        waitingStarted(dead_server);
-      }
-      dead_servers.clear();
-    } catch (Throwable t) {
-      LOG.warning(ToyUtils.buildError(t));
-      return 1;
     }
 
-    return 0;
+    for (ServerName dead_server : dead_servers) {
+      waitingStopped(dead_server);
+      startProcess(dead_server);
+    }
+    for (ServerName dead_server : dead_servers) {
+      waitingStarted(dead_server);
+    }
+    dead_servers.clear();
   }
 
 }

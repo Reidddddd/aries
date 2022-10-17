@@ -16,7 +16,6 @@
 
 package org.apache.aries.action;
 
-import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ServerName;
@@ -52,7 +51,7 @@ public class BatchRestartRegionServer extends RestartRegionServer {
   }
 
   @Override
-  public Integer call() throws Exception {
+  protected void chaos() throws Exception {
     ArrayList<ServerName> to_be_killed = new ArrayList<>(num_restart);
     for (int i = 0; i < num_restart;) {
       ServerName server = super.pickTargetServer();
@@ -66,20 +65,13 @@ public class BatchRestartRegionServer extends RestartRegionServer {
       to_be_killed.add(i++, server);
     }
 
-    try {
-      for (ServerName server : to_be_killed) stopProcess(server);
-      for (ServerName server : to_be_killed) waitingStopped(server);
+    for (ServerName server : to_be_killed) stopProcess(server);
+    for (ServerName server : to_be_killed) waitingStopped(server);
 
-      Thread.sleep(getTimeoutInMilliSeconds(sleep_seconds));
+    Thread.sleep(getTimeoutInMilliSeconds(sleep_seconds));
 
-      for (ServerName server : to_be_killed) startProcess(server);
-      for (ServerName server : to_be_killed) waitingStarted(server);
-    } catch (Throwable t) {
-      LOG.warning(ToyUtils.buildError(t));
-      return 1;
-    }
-
-    return 0;
+    for (ServerName server : to_be_killed) startProcess(server);
+    for (ServerName server : to_be_killed) waitingStarted(server);
   }
 
 }

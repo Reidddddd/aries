@@ -67,8 +67,6 @@ public abstract class RestartBase extends Action {
   protected Admin admin;
   protected String remote_ssh_exe_path;
 
-  private String error = "";
-
   public RestartBase() {}
 
   @Override
@@ -83,21 +81,23 @@ public abstract class RestartBase extends Action {
   protected abstract ServerName pickTargetServer() throws Exception;
 
   @Override
-  public Integer call() throws Exception {
-    ServerName target_server = pickTargetServer();
-
+  public final Integer call() throws Exception {
     try {
-      stopProcess(target_server);
-      waitingStopped(target_server);
-      Thread.sleep(getTimeoutInMilliSeconds(sleep_a_while));
-      startProcess(target_server);
-      waitingStarted(target_server);
+      chaos();
     } catch (Throwable t) {
       LOG.warning(ToyUtils.buildError(t));
       return 1;
     }
-
     return 0;
+  }
+
+  protected void chaos() throws Exception {
+    ServerName target_server = pickTargetServer();
+    stopProcess(target_server);
+    waitingStopped(target_server);
+    Thread.sleep(getTimeoutInMilliSeconds(sleep_a_while));
+    startProcess(target_server);
+    waitingStarted(target_server);
   }
 
   protected void startProcess(ServerName target_server) throws IOException {
