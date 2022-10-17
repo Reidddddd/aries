@@ -16,6 +16,7 @@
 
 package org.apache.aries.action;
 
+import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hbase.ServerName;
@@ -56,7 +57,7 @@ public class RestartDataNode extends RestartBase {
 
   @Override
   public long getTimeout() {
-    return getTimeoutInMilliSeconds(timeout);
+    return ToyUtils.getTimeoutInMilliSeconds(timeout);
   }
 
   @Override
@@ -68,7 +69,7 @@ public class RestartDataNode extends RestartBase {
     for (DatanodeInfo dataNode: dfs_client.datanodeReport(HdfsConstants.DatanodeReportType.LIVE)) {
       servers.add(ServerName.valueOf(dataNode.getHostName(), dataNode.getIpcPort(), -1));
     }
-    return servers.get(random.nextInt(servers.size()));
+    return servers.get(RANDOM.nextInt(servers.size()));
   }
 
   @Override

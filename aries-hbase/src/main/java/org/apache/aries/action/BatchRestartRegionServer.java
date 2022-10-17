@@ -16,6 +16,7 @@
 
 package org.apache.aries.action;
 
+import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ServerName;
@@ -68,7 +69,7 @@ public class BatchRestartRegionServer extends RestartRegionServer {
     for (ServerName server : to_be_killed) stopProcess(server);
     for (ServerName server : to_be_killed) waitingStopped(server);
 
-    Thread.sleep(getTimeoutInMilliSeconds(sleep_seconds));
+    Thread.sleep(ToyUtils.getTimeoutInMilliSeconds(sleep_seconds));
 
     for (ServerName server : to_be_killed) startProcess(server);
     for (ServerName server : to_be_killed) waitingStarted(server);

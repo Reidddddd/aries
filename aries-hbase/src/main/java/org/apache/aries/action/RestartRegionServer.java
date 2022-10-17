@@ -17,6 +17,7 @@
 package org.apache.aries.action;
 
 import org.apache.aries.RemoteSSH;
+import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.ServerName;
@@ -53,7 +54,7 @@ public class RestartRegionServer extends RestartBase {
 
   @Override
   public long getTimeout() {
-    return getTimeoutInMilliSeconds(timeout);
+    return ToyUtils.getTimeoutInMilliSeconds(timeout);
   }
 
   @Override
@@ -61,7 +62,7 @@ public class RestartRegionServer extends RestartBase {
     ClusterStatus status = admin.getClusterStatus();
     ServerName[] servers = status.getServers().toArray(new ServerName[0]);
 
-    return servers[random.nextInt(servers.length)];
+    return servers[RANDOM.nextInt(servers.length)];
   }
 
   @Override

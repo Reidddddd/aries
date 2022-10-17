@@ -17,6 +17,7 @@
 package org.apache.aries.action;
 
 import org.apache.aries.RemoteSSH;
+import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.ServerName;
@@ -53,7 +54,7 @@ public class RestartZookeeper extends RestartBase {
 
   @Override
   public long getTimeout() {
-    return getTimeoutInMilliSeconds(timeout);
+    return ToyUtils.getTimeoutInMilliSeconds(timeout);
   }
 
   @Override
@@ -64,7 +65,7 @@ public class RestartZookeeper extends RestartBase {
   @Override
   protected ServerName pickTargetServer() throws Exception {
     String[] zks = connection.getConfiguration().getStrings(HConstants.ZOOKEEPER_QUORUM);
-    String zookeeper = zks[random.nextInt(zks.length)];
+    String zookeeper = zks[RANDOM.nextInt(zks.length)];
     return ServerName.valueOf(zookeeper, -1, -1);
   }
 

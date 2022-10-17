@@ -59,7 +59,7 @@ public abstract class RestartBase extends Action {
     SIGKILL, SIGTERM
   }
 
-  protected final Random random = new Random();
+  protected final Random RANDOM = new Random();
 
   protected ServiceType service_type;
   protected Signal signal;
@@ -95,7 +95,7 @@ public abstract class RestartBase extends Action {
     ServerName target_server = pickTargetServer();
     stopProcess(target_server);
     waitingStopped(target_server);
-    Thread.sleep(getTimeoutInMilliSeconds(sleep_a_while));
+    Thread.sleep(ToyUtils.getTimeoutInMilliSeconds(sleep_a_while));
     startProcess(target_server);
     waitingStarted(target_server);
   }

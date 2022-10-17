@@ -16,6 +16,7 @@
 
 package org.apache.aries.action;
 
+import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ServerName;
@@ -77,7 +78,7 @@ public class RollingRestartRegionServer extends RestartRegionServer {
 
     while (dead_servers.size() < max_dead) {
       if (just_start) just_start = false;
-      else Thread.sleep(getTimeoutInMilliSeconds(sleep_between));
+      else Thread.sleep(ToyUtils.getTimeoutInMilliSeconds(sleep_between));
 
       ServerName target_server = pickTargetServer();
       if (dead_servers.isEmpty()) {
@@ -89,7 +90,7 @@ public class RollingRestartRegionServer extends RestartRegionServer {
 
       if (async && dead_servers.contains(target_server)) continue;
 
-      int act_code = random.nextInt(3);
+      int act_code = RANDOM.nextInt(3);
       Action action = act_code == 0 ? Action.START :
                       act_code == 1 ? Action.STOP  : Action.DEFAULT;
       switch (action) {

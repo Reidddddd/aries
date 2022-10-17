@@ -19,6 +19,7 @@ package org.apache.aries.common;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public final class ToyUtils {
 
@@ -75,6 +76,10 @@ public final class ToyUtils {
       errorBuilder.append(ste + System.lineSeparator());
     }
     return errorBuilder.toString();
+  }
+
+  public static long getTimeoutInMilliSeconds(int timeout_in_seconds) {
+    return TimeUnit.MILLISECONDS.convert(timeout_in_seconds, TimeUnit.SECONDS);
   }
 
 }
