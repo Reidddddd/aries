@@ -32,8 +32,8 @@ import java.util.List;
 
 public class RestartDataNode extends RestartBase {
 
-  public static final String                 DN_START = "restart_datanode.start_command";
-  public static final String               DN_TIMEOUT = "restart_datanode.status.check.timeout_in_seconds";
+  public static final String          DN_START = "restart_datanode.start_command";
+  public static final String DN_STATUS_TIMEOUT = "restart_datanode.status.check.timeout_in_seconds";
 
   private String start_cmd;
   private int timeout;
@@ -46,7 +46,7 @@ public class RestartDataNode extends RestartBase {
     super.init(configuration, connection);
              service_type = ServiceType.DATANODE;
                 start_cmd = configuration.get("cr." + DN_START);
-                  timeout = configuration.getInt("cr." + DN_TIMEOUT, 0);
+                  timeout = configuration.getInt("cr." + DN_STATUS_TIMEOUT, 0);
   }
 
   @Override
@@ -85,7 +85,7 @@ public class RestartDataNode extends RestartBase {
           return;
         }
       }
-      Threads.sleep(getTimeout() / 5);
+      Threads.sleep(sleepInterval());
     }
     String err = "Timeout waiting for " + service_type.service() + " to start on " + target_server.getHostname();
     LOG.warning(err);
@@ -105,7 +105,7 @@ public class RestartDataNode extends RestartBase {
           return;
         }
       }
-      Threads.sleep(getTimeout() / 5);
+      Threads.sleep(sleepInterval());
     }
     String err = "Timeout waiting for " + service_type.service() + " to stop on " + target_server.getHostname();
     LOG.warning(err);

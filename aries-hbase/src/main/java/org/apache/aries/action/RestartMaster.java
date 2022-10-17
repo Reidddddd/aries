@@ -74,7 +74,7 @@ public class RestartMaster extends RestartBase {
           return;
         }
       }
-      Threads.sleep(getTimeout() / 5);
+      Threads.sleep(sleepInterval());
     }
     String err = "Timeout waiting for " + service_type.service() + " to start on " + target_server.getHostname();
     LOG.warning(err);
@@ -113,7 +113,7 @@ public class RestartMaster extends RestartBase {
             LOG.info(service_type.service() + " on " + target_server.getHostname() + " is stopped");
             return;
           }
-          Threads.sleep(getTimeout() / 5);
+          Threads.sleep(sleepInterval());
         }
         String err = "Timeout waiting for " + service_type.service() + " to stop on " + target_server.getHostname();
         LOG.warning(err);
@@ -122,7 +122,7 @@ public class RestartMaster extends RestartBase {
       } catch (IOException m) {
         LOG.warning(m.getMessage());
       }
-      Threads.sleep(getTimeout() / 5);
+      Threads.sleep(sleepInterval());
     }
     String err = "Timeout waiting for active master switched";
     LOG.warning(err);

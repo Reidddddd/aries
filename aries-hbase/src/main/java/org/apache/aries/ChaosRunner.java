@@ -68,14 +68,14 @@ public class ChaosRunner extends AbstractHBaseToy {
       IntParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.SLEEP_A_WHILE).setDefaultValue(0)
                   .setDescription("Sleep for seconds before executing start command").opt();
   // RestartRegionServer & RollingRestartRegionServer & BatchRestartRegionServer
-  public final Parameter<String> start_rs_cmd =
+  public final Parameter<String> rs_start_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_START)
                      .setDescription("Command to start regionserver").opt();
-  public final Parameter<String> check_rs_stopped_cmd =
+  public final Parameter<String> rs_check_stopped_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_CHECK_STOPPED_COMMAND)
                      .setDescription("Command to check whether regionserver is dead").opt();
-  private final Parameter<Integer> chao_rs_timeout=
-      IntParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_TIMEOUT).setDefaultValue(0)
+  private final Parameter<Integer> rs_status_timeout =
+      IntParameter.newBuilder(getParameterPrefix() + "." +  RestartRegionServer.RS_STATUS_TIMEOUT).setDefaultValue(0)
                   .setDescription("Timeout waiting for regionserver to dead or alive, in seconds").opt();
   private final Parameter<Integer> rolling_max_dead=
       IntParameter.newBuilder(getParameterPrefix() + "." + RollingRestartRegionServer.ROLLING_RS_MAX_DEAD)
@@ -106,30 +106,30 @@ public class ChaosRunner extends AbstractHBaseToy {
                    .setDescription("Whether meta regionserver should be excluded, during batch restart, true by default.")
                    .opt();
   // RestartMaster
-  public final Parameter<String> start_mst_cmd =
+  public final Parameter<String> mst_start_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartMaster.MS_START)
                      .setDescription("Command to start master").opt();
-  public final Parameter<String> check_mst_stopped_cmd =
+  public final Parameter<String> mst_check_stopped_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartMaster.MS_CHECK_STOPPED_COMMAND)
                      .setDescription("Command to check whether master is dead").opt();
-  private final Parameter<Integer> chao_mst_timeout=
+  private final Parameter<Integer> mst_status_timeout =
       IntParameter.newBuilder(getParameterPrefix() + "." +  RestartMaster.MS_TIMEOUT).setDefaultValue(0)
                   .setDescription("Timeout waiting for master to dead or alive, in seconds").opt();
   // RestartDataNode
-  public final Parameter<String> start_dn_cmd =
+  public final Parameter<String> dn_start_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartDataNode.DN_START)
                      .setDescription("Command to start datanode").opt();
-  private final Parameter<Integer> chao_dn_timeout=
-      IntParameter.newBuilder(getParameterPrefix() + "." +  RestartDataNode.DN_TIMEOUT).setDefaultValue(0)
+  private final Parameter<Integer> dn_status_timeout =
+      IntParameter.newBuilder(getParameterPrefix() + "." +  RestartDataNode.DN_STATUS_TIMEOUT).setDefaultValue(0)
                   .setDescription("Timeout waiting for datanode to dead or alive, in seconds").opt();
   // RestartZookeeper
-  public final Parameter<String> start_zk_cmd =
+  public final Parameter<String> zk_start_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartZookeeper.ZK_START)
                      .setDescription("Command to start zookeeper").opt();
-  public final Parameter<String> check_zk_status_cmd =
+  public final Parameter<String> zk_check_status_cmd =
       StringParameter.newBuilder(getParameterPrefix() + "." +  RestartZookeeper.ZK_CHECK_STATUS_COMMAND)
                      .setDescription("Command to check whether zookeeper is alive or dead").opt();
-  private final Parameter<Integer> chao_zk_timeout=
+  private final Parameter<Integer> zk_status_timeout =
       IntParameter.newBuilder(getParameterPrefix() + "." +  RestartZookeeper.ZK_TIMEOUT).setDefaultValue(0)
                   .setDescription("Timeout waiting for zookeeper to dead or alive, in seconds").opt();
 
@@ -168,9 +168,9 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(kill_signal);
     requisites.add(sleep_a_while);
 
-    requisites.add(start_rs_cmd);
-    requisites.add(chao_rs_timeout);
-    requisites.add(check_rs_stopped_cmd);
+    requisites.add(rs_start_cmd);
+    requisites.add(rs_status_timeout);
+    requisites.add(rs_check_stopped_cmd);
     requisites.add(rolling_max_dead);
     requisites.add(rolling_sleep_time);
     requisites.add(rolling_meta_exclude);
@@ -179,16 +179,16 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(batch_sleep_time);
     requisites.add(batch_meta_exclude);
 
-    requisites.add(start_mst_cmd);
-    requisites.add(check_mst_stopped_cmd);
-    requisites.add(chao_mst_timeout);
+    requisites.add(mst_start_cmd);
+    requisites.add(mst_check_stopped_cmd);
+    requisites.add(mst_status_timeout);
 
-    requisites.add(start_dn_cmd);
-    requisites.add(chao_dn_timeout);
+    requisites.add(dn_start_cmd);
+    requisites.add(dn_status_timeout);
 
-    requisites.add(start_zk_cmd);
-    requisites.add(chao_zk_timeout);
-    requisites.add(check_zk_status_cmd);
+    requisites.add(zk_start_cmd);
+    requisites.add(zk_status_timeout);
+    requisites.add(zk_check_status_cmd);
   }
 
   @Override
@@ -201,9 +201,9 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(kill_signal.key(), "SIGKILL");
     example(sleep_a_while.key(), "10");
 
-    example(start_rs_cmd.key(), "sudo systemctl start regionserver");
-    example(chao_rs_timeout.key(), "10");
-    example(check_rs_stopped_cmd.key(), "sudo systemctl is-active regionserver -q");
+    example(rs_start_cmd.key(), "sudo systemctl start regionserver");
+    example(rs_status_timeout.key(), "10");
+    example(rs_check_stopped_cmd.key(), "sudo systemctl is-active regionserver -q");
     example(rolling_max_dead.key(), "2");
     example(rolling_sleep_time.key(), "2");
     example(rolling_meta_exclude.key(), "true");
@@ -212,16 +212,16 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(batch_sleep_time.key(), "5");
     example(batch_meta_exclude.key(), "true");
 
-    example(start_mst_cmd.key(), "sudo systemctl start master");
-    example(chao_mst_timeout.key(), "120");
-    example(check_mst_stopped_cmd.key(), "sudo systemctl is-active master -q");
+    example(mst_start_cmd.key(), "sudo systemctl start master");
+    example(mst_status_timeout.key(), "120");
+    example(mst_check_stopped_cmd.key(), "sudo systemctl is-active master -q");
 
-    example(start_dn_cmd.key(), "sudo systemctl start datanode");
-    example(chao_dn_timeout.key(), "120");
+    example(dn_start_cmd.key(), "sudo systemctl start datanode");
+    example(dn_status_timeout.key(), "120");
 
-    example(start_zk_cmd.key(), "sudo systemctl start master");
-    example(chao_zk_timeout.key(), "120");
-    example(check_zk_status_cmd.key(), "sudo systemctl is-active master -q");
+    example(zk_start_cmd.key(), "sudo systemctl start master");
+    example(zk_status_timeout.key(), "120");
+    example(zk_check_status_cmd.key(), "sudo systemctl is-active master -q");
   }
 
   @Override

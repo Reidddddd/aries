@@ -30,9 +30,9 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class RestartBase extends Action {
 
-  public static String REMOTE_SSH_EXE_PATH = "restart_base_action.remote_ssh.exe.path";
-  public static String         KILL_SIGNAL = "restart_base_action.kill.signal";
-  public static String       SLEEP_A_WHILE = "restart_base_action.sleep.seconds.before_start";
+  public final static String REMOTE_SSH_EXE_PATH = "restart_base_action.remote_ssh.exe.path";
+  public final static String         KILL_SIGNAL = "restart_base_action.kill.signal";
+  public final static String       SLEEP_A_WHILE = "restart_base_action.sleep.seconds.before_start";
 
   enum ServiceType {
     MASTER("Master"),
@@ -130,6 +130,10 @@ public abstract class RestartBase extends Action {
 
   protected long getTimeoutInMilliSeconds(int timeout_in_seconds) {
     return TimeUnit.MILLISECONDS.convert(timeout_in_seconds, TimeUnit.SECONDS);
+  }
+
+  protected long sleepInterval() {
+    return getTimeout() / 10;
   }
 
   public abstract String startCommand();

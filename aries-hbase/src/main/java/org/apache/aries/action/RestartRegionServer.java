@@ -28,7 +28,7 @@ import java.io.IOException;
 public class RestartRegionServer extends RestartBase {
 
   public static final String                 RS_START = "restart_regionserver.start_command";
-  public static final String               RS_TIMEOUT = "restart_regionserver.status.check.timeout_in_seconds";
+  public static final String        RS_STATUS_TIMEOUT = "restart_regionserver.status.check.timeout_in_seconds";
   public static final String RS_CHECK_STOPPED_COMMAND = "restart_regionserver.check.stopped_command";
 
   private String start_cmd;
@@ -43,7 +43,7 @@ public class RestartRegionServer extends RestartBase {
              service_type = ServiceType.REGIONSERVER;
                 start_cmd = configuration.get("cr." + RS_START);
     check_stopped_command = configuration.get("cr." + RS_CHECK_STOPPED_COMMAND);
-                  timeout = configuration.getInt("cr." + RS_TIMEOUT, 0);
+                  timeout = configuration.getInt("cr." + RS_STATUS_TIMEOUT, 0);
   }
 
   @Override
@@ -77,7 +77,7 @@ public class RestartRegionServer extends RestartBase {
           return;
         }
       }
-      Threads.sleep(getTimeout() / 5);
+      Threads.sleep(sleepInterval());
     }
     String err = "Timeout waiting for " + service_type.service() + " to start on " + target_server.getHostname();
     LOG.warning(err);
@@ -101,7 +101,7 @@ public class RestartRegionServer extends RestartBase {
         LOG.info(service_type.service() + " on " + target_server.getHostname() + " is stopped");
         return;
       }
-      Threads.sleep(getTimeout() / 5);
+      Threads.sleep(sleepInterval());
     }
     String err = "Timeout waiting for " + service_type.service() + " to stop on " + target_server.getHostname();
     LOG.warning(err);
