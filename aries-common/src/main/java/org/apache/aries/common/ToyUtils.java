@@ -82,5 +82,8 @@ public final class ToyUtils {
     return TimeUnit.MILLISECONDS.convert(timeout_in_seconds, TimeUnit.SECONDS);
   }
 
+  public static long getTimeoutInSeconds(long timeout_in_milli_seconds) {
+    return TimeUnit.SECONDS.convert(timeout_in_milli_seconds, TimeUnit.MILLISECONDS);
+  }
 }
 

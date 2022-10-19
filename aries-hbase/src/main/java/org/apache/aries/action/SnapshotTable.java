@@ -31,12 +31,15 @@ public class SnapshotTable extends TableBase {
 
   @Override
   protected void prePerform(TableName table) throws Exception {
+    super.prePerform(table);
     snapshot_name = table.getNameAsString().replaceAll(":", "_") + System.currentTimeMillis();
-    admin.snapshot(snapshot_name, table);
+    LOG.info("Start snapshoting table " + table + " with snapshot name " + snapshot_name);
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
+    super.postPerform(table);
+    LOG.info("Finish snapshoting table " + table + " in " + getDuration() + " seconds");
   }
 
 }

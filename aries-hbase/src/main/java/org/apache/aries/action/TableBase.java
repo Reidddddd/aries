@@ -38,6 +38,8 @@ public abstract class TableBase extends Action {
   protected int sleep_secs;
   protected TableName table;
   protected Admin admin;
+  protected long start_time;
+  protected long duration;
 
   public TableBase() {}
 
@@ -81,8 +83,15 @@ public abstract class TableBase extends Action {
 
   protected abstract void perform(TableName table) throws Exception;
 
-  protected abstract void prePerform(TableName table) throws Exception;
+  protected void prePerform(TableName table) throws Exception {
+    start_time = System.currentTimeMillis();
+  }
 
-  protected abstract void postPerform(TableName table) throws Exception;
+  protected void postPerform(TableName table) throws Exception {
+    duration = System.currentTimeMillis() - start_time;
+  }
 
+  protected long getDuration() {
+    return ToyUtils.getTimeoutInSeconds(duration);
+  }
 }

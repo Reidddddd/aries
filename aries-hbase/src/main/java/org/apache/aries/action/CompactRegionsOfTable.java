@@ -63,6 +63,7 @@ public class CompactRegionsOfTable extends CompactTable {
 
   @Override
   protected void postPerform(TableName table) throws Exception {
+    LOG.info("Compaction is an async call, don't know when will finish");
   }
 
 }
