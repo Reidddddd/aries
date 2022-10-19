@@ -20,6 +20,7 @@ import org.apache.aries.action.Action;
 import org.apache.aries.action.BatchRestartRegionServer;
 import org.apache.aries.action.CompactRegionsOfTable;
 import org.apache.aries.action.FlushRegionsOfTable;
+import org.apache.aries.action.MergeRegionsOfTable;
 import org.apache.aries.action.MoveRegionsOfTable;
 import org.apache.aries.action.RestartBase;
 import org.apache.aries.action.RestartBase.Signal;
@@ -169,6 +170,11 @@ public class ChaosRunner extends AbstractHBaseToy {
       FloatParameter.newBuilder(getParameterPrefix() + "." + MoveRegionsOfTable.MOVE_RATIO)
                     .setDefaultValue(0.2f).addConstraint(r -> r > 0).addConstraint(r -> r < 1.0)
                     .setDescription("A ratio of regions to be moved").opt();
+  // MergeRegionsOfTable
+  private final Parameter<Float> merge_table_region_ratio =
+      FloatParameter.newBuilder(getParameterPrefix() + "." + MergeRegionsOfTable.MERGE_RATIO)
+                    .setDefaultValue(0.2f).addConstraint(r -> r > 0).addConstraint(r -> r < 1.0)
+                    .setDescription("A ratio of regions to be merged").opt();
 
   private final Random random = new Random();
   private final int ERROR = 1;
@@ -237,6 +243,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(flush_table_region_ratio);
     requisites.add(split_table_region_ratio);
     requisites.add(move_table_region_ratio);
+    requisites.add(merge_table_region_ratio);
   }
 
   @Override
@@ -281,6 +288,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(flush_table_region_ratio.key(), "0.2");
     example(split_table_region_ratio.key(), "0.2");
     example(move_table_region_ratio.key(), "0.2");
+    example(merge_table_region_ratio.key(), "0.2");
   }
 
   @Override
