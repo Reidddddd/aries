@@ -24,7 +24,7 @@ import org.apache.hadoop.hbase.client.Connection;
 import java.io.IOException;
 import java.util.List;
 
-public class FlushRegionsOfTable extends TableBase {
+public class FlushRegionsOfTable extends FlushTable {
 
   public final static String FLUSH_RATIO = "flush_table_regions.ratios";
 

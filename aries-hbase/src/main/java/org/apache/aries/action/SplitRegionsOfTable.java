@@ -16,20 +16,42 @@
 
 package org.apache.aries.action;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
 
-public class SplitTable extends TableBase {
+import java.io.IOException;
+import java.util.List;
 
-  public SplitTable() {}
+public class SplitRegionsOfTable extends SplitTable {
+
+  public final static String SPLIT_RATIO = "split_table_regions.ratios";
+
+  private float ratio;
+  private List<HRegionInfo> regions;
+
+  public SplitRegionsOfTable() {}
+
+  @Override
+  public void init(Configuration configuration, Connection connection) throws IOException {
+    super.init(configuration, connection);
+    ratio = configuration.getFloat("cr." + SPLIT_RATIO, 0.2f);
+  }
 
   @Override
   protected void perform(TableName table) throws Exception {
-    LOG.info("Start splitting " + table);
-    admin.split(table);
+    int number_regions = (int) (regions.size() * ratio);
+    for (int i = 0; i < number_regions; i++) {
+      HRegionInfo picked = regions.get(RANDOM.nextInt(regions.size()));
+      LOG.info("Splitting region " + picked.getRegionNameAsString() + " of " + table);
+      admin.splitRegion(picked.getRegionName());
+    }
   }
 
   @Override
   protected void prePerform(TableName table) throws Exception {
+    regions = admin.getTableRegions(table);
   }
 
   @Override

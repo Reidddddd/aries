@@ -27,8 +27,10 @@ public class CompactTable extends TableBase {
   @Override
   protected void perform(TableName table) throws Exception {
     if (major) {
+      LOG.info("Major compacting " + table);
       admin.majorCompact(table);
     } else {
+      LOG.info("Compacting " + table);
       admin.compact(table);
     }
   }
