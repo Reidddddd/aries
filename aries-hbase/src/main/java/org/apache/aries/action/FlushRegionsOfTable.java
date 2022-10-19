@@ -26,7 +26,7 @@ import java.util.List;
 
 public class FlushRegionsOfTable extends FlushTable {
 
-  public final static String FLUSH_RATIO = "flush_table_regions.ratios";
+  public final static String FLUSH_RATIO = "flush_table_regions.ratio";
 
   private float ratio;
   private List<HRegionInfo> regions;

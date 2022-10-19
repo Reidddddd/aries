@@ -20,6 +20,7 @@ import org.apache.aries.action.Action;
 import org.apache.aries.action.BatchRestartRegionServer;
 import org.apache.aries.action.CompactRegionsOfTable;
 import org.apache.aries.action.FlushRegionsOfTable;
+import org.apache.aries.action.MoveRegionsOfTable;
 import org.apache.aries.action.RestartBase;
 import org.apache.aries.action.RestartBase.Signal;
 import org.apache.aries.action.RestartDataNode;
@@ -27,6 +28,7 @@ import org.apache.aries.action.RestartMaster;
 import org.apache.aries.action.RestartRegionServer;
 import org.apache.aries.action.RestartZookeeper;
 import org.apache.aries.action.RollingRestartRegionServer;
+import org.apache.aries.action.SplitRegionsOfTable;
 import org.apache.aries.action.TableBase;
 import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.EnumParameter;
@@ -157,6 +159,16 @@ public class ChaosRunner extends AbstractHBaseToy {
       FloatParameter.newBuilder(getParameterPrefix() + "." + FlushRegionsOfTable.FLUSH_RATIO)
                     .setDefaultValue(0.2f).addConstraint(r -> r > 0).addConstraint(r -> r < 1.0)
                     .setDescription("A ratio of regions to be flushed").opt();
+  // SplitRegionsOfTable
+  private final Parameter<Float> split_table_region_ratio =
+      FloatParameter.newBuilder(getParameterPrefix() + "." + SplitRegionsOfTable.SPLIT_RATIO)
+                    .setDefaultValue(0.2f).addConstraint(r -> r > 0).addConstraint(r -> r < 1.0)
+                    .setDescription("A ratio of regions to be splitted").opt();
+  // MoveRegionsOfTable
+  private final Parameter<Float> move_table_region_ratio =
+      FloatParameter.newBuilder(getParameterPrefix() + "." + MoveRegionsOfTable.MOVE_RATIO)
+                    .setDefaultValue(0.2f).addConstraint(r -> r > 0).addConstraint(r -> r < 1.0)
+                    .setDescription("A ratio of regions to be moved").opt();
 
   private final Random random = new Random();
   private final int ERROR = 1;
@@ -223,6 +235,8 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(sleep_between_table_action);
     requisites.add(compact_table_region_ratio);
     requisites.add(flush_table_region_ratio);
+    requisites.add(split_table_region_ratio);
+    requisites.add(move_table_region_ratio);
   }
 
   @Override
@@ -265,6 +279,8 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(sleep_between_table_action.key(), "1");
     example(compact_table_region_ratio.key(), "0.2");
     example(flush_table_region_ratio.key(), "0.2");
+    example(split_table_region_ratio.key(), "0.2");
+    example(move_table_region_ratio.key(), "0.2");
   }
 
   @Override

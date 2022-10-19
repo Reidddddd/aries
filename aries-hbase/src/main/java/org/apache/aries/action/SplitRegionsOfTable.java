@@ -26,7 +26,7 @@ import java.util.List;
 
 public class SplitRegionsOfTable extends SplitTable {
 
-  public final static String SPLIT_RATIO = "split_table_regions.ratios";
+  public final static String SPLIT_RATIO = "split_table_regions.ratio";
 
   private float ratio;
   private List<HRegionInfo> regions;
