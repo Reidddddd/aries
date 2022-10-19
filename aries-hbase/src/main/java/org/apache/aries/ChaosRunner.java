@@ -19,6 +19,7 @@ package org.apache.aries;
 import org.apache.aries.action.Action;
 import org.apache.aries.action.BatchRestartRegionServer;
 import org.apache.aries.action.CompactRegionsOfTable;
+import org.apache.aries.action.FlushRegionsOfTable;
 import org.apache.aries.action.RestartBase;
 import org.apache.aries.action.RestartBase.Signal;
 import org.apache.aries.action.RestartDataNode;
@@ -151,6 +152,11 @@ public class ChaosRunner extends AbstractHBaseToy {
       FloatParameter.newBuilder(getParameterPrefix() + "." + CompactRegionsOfTable.COMPACT_RATIO)
                     .setDefaultValue(0.2f).addConstraint(r -> r > 0).addConstraint(r -> r < 1.0)
                     .setDescription("A ratio of regions to be compacted").opt();
+  // FlushRegionsOfTable
+  private final Parameter<Float> flush_table_region_ratio =
+      FloatParameter.newBuilder(getParameterPrefix() + "." + FlushRegionsOfTable.FLUSH_RATIO)
+                    .setDefaultValue(0.2f).addConstraint(r -> r > 0).addConstraint(r -> r < 1.0)
+                    .setDescription("A ratio of regions to be flushed").opt();
 
   private final Random random = new Random();
   private final int ERROR = 1;
@@ -216,6 +222,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(act_rounds);
     requisites.add(sleep_between_table_action);
     requisites.add(compact_table_region_ratio);
+    requisites.add(flush_table_region_ratio);
   }
 
   @Override
@@ -257,6 +264,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(act_rounds.key(), "2");
     example(sleep_between_table_action.key(), "1");
     example(compact_table_region_ratio.key(), "0.2");
+    example(flush_table_region_ratio.key(), "0.2");
   }
 
   @Override

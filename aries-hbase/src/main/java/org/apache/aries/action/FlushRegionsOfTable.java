@@ -24,46 +24,42 @@ import org.apache.hadoop.hbase.client.Connection;
 import java.io.IOException;
 import java.util.List;
 
-public class CompactRegionsOfTable extends CompactTable {
+public class FlushRegionsOfTable extends TableBase {
 
-  public final static String COMPACT_RATIO = "compact_table_regions.ratios";
+  public final static String FLUSH_RATIO = "flush_table_regions.ratios";
 
   private float ratio;
   private List<HRegionInfo> regions;
+  private int number_regions;
 
-  public CompactRegionsOfTable() {}
+  public FlushRegionsOfTable() {}
 
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
-    ratio = configuration.getFloat("cr." + COMPACT_RATIO, 0.2f);
+    ratio = configuration.getFloat("cr." + FLUSH_RATIO, 0.2f);
   }
 
   @Override
   protected void perform(TableName table) throws Exception {
-    int number_regions = (int) (regions.size() * ratio);
     for (int i = 0; i < number_regions; i++) {
       HRegionInfo picked = regions.get(RANDOM.nextInt(regions.size()));
-      if (major) {
-        LOG.info("Major compacting region " + picked.getRegionNameAsString() + " of " + table);
-        admin.majorCompactRegion(picked.getRegionName());
-      } else {
-        LOG.info("Compacting region " + picked.getRegionNameAsString() + " of " + table);
-        admin.compactRegion(picked.getRegionName());
-      }
+      LOG.info("Start flushing region " + picked.getRegionNameAsString() + " of " + table);
+      admin.flushRegion(picked.getRegionName());
     }
   }
 
   @Override
   protected void prePerform(TableName table) throws Exception {
     super.prePerform(table);
-      major = RANDOM.nextBoolean();
     regions = admin.getTableRegions(table);
+    number_regions = (int) (regions.size() * ratio);
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
-    LOG.info("Compaction is an async call, don't know when will finish");
+    super.postPerform(table);
+    LOG.info("Finish flushing " + number_regions + " of " + table + " in " + getDuration() + " seconds");
   }
 
 }
