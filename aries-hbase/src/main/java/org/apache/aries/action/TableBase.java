@@ -55,8 +55,12 @@ public abstract class TableBase extends Action {
 
   @Override
   public final Integer call() throws Exception {
+    boolean first_round = true;
     try {
       for (int i = 0; i < x_rounds; i++) {
+        if (first_round) first_round = false;
+        else Thread.sleep(ToyUtils.getTimeoutInMilliSeconds(sleep_secs));
+
         TableName picked;
         if (random_pick) {
           TableName[] tables = admin.listTableNames();
@@ -67,7 +71,6 @@ public abstract class TableBase extends Action {
         prePerform(picked);
         perform(picked);
         postPerform(picked);
-        Thread.sleep(ToyUtils.getTimeoutInMilliSeconds(sleep_secs));
       }
     } catch (Throwable t) {
       LOG.warning(ToyUtils.buildError(t));

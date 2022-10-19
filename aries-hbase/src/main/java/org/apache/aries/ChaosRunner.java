@@ -18,6 +18,7 @@ package org.apache.aries;
 
 import org.apache.aries.action.Action;
 import org.apache.aries.action.BatchRestartRegionServer;
+import org.apache.aries.action.CompactRegionsOfTable;
 import org.apache.aries.action.RestartBase;
 import org.apache.aries.action.RestartBase.Signal;
 import org.apache.aries.action.RestartDataNode;
@@ -25,8 +26,10 @@ import org.apache.aries.action.RestartMaster;
 import org.apache.aries.action.RestartRegionServer;
 import org.apache.aries.action.RestartZookeeper;
 import org.apache.aries.action.RollingRestartRegionServer;
+import org.apache.aries.action.TableBase;
 import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.EnumParameter;
+import org.apache.aries.common.FloatParameter;
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.StringArrayParameter;
@@ -133,6 +136,22 @@ public class ChaosRunner extends AbstractHBaseToy {
       IntParameter.newBuilder(getParameterPrefix() + "." +  RestartZookeeper.ZK_TIMEOUT).setDefaultValue(0)
                   .setDescription("Timeout waiting for zookeeper to dead or alive, in seconds").opt();
 
+  // TableBase
+  public final Parameter<String> table_name =
+      StringParameter.newBuilder(getParameterPrefix() + "." +  TableBase.TABLE_NAME)
+                     .setDescription("Table to perform chaos action, if unspecified, random pick one existed table").opt();
+  private final Parameter<Integer> act_rounds =
+      IntParameter.newBuilder(getParameterPrefix() + "." +  TableBase.X_ROUNDS).setDefaultValue(2)
+                  .setDescription("Rounds to perform actions, 2 by default").opt();
+  private final Parameter<Integer> sleep_between_table_action =
+      IntParameter.newBuilder(getParameterPrefix() + "." +  TableBase.SLEEP_SECS).setDefaultValue(1)
+                  .setDescription("Sleep time between each chaos action round, in seconds, 1 secs by default").opt();
+  // CompactRegionsOfTable
+  private final Parameter<Float> compact_table_region_ratio =
+      FloatParameter.newBuilder(getParameterPrefix() + "." + CompactRegionsOfTable.COMPACT_RATIO)
+                    .setDefaultValue(0.2f).addConstraint(r -> r > 0).addConstraint(r -> r < 1.0)
+                    .setDescription("A ratio of regions to be compacted").opt();
+
   private final Random random = new Random();
   private final int ERROR = 1;
 
@@ -164,6 +183,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(chaos);
     requisites.add(running_time);
 
+    // Restart base
     requisites.add(local_exe_path);
     requisites.add(kill_signal);
     requisites.add(sleep_a_while);
@@ -189,6 +209,13 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(zk_start_cmd);
     requisites.add(zk_status_timeout);
     requisites.add(zk_check_status_cmd);
+
+
+    // Table base
+    requisites.add(table_name);
+    requisites.add(act_rounds);
+    requisites.add(sleep_between_table_action);
+    requisites.add(compact_table_region_ratio);
   }
 
   @Override
@@ -197,6 +224,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(chaos.key(), "1");
     example(running_time.key(), "6000");
 
+    // Restart base
     example(local_exe_path.key(), "/home/util/remote-ssh");
     example(kill_signal.key(), "SIGKILL");
     example(sleep_a_while.key(), "10");
@@ -222,6 +250,13 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(zk_start_cmd.key(), "sudo systemctl start master");
     example(zk_status_timeout.key(), "120");
     example(zk_check_status_cmd.key(), "sudo systemctl is-active master -q");
+
+
+    // Table base
+    example(table_name.key(), "NAMESPACE:table");
+    example(act_rounds.key(), "2");
+    example(sleep_between_table_action.key(), "1");
+    example(compact_table_region_ratio.key(), "0.2");
   }
 
   @Override

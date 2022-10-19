@@ -22,7 +22,7 @@ public class CompactTable extends TableBase {
 
   public CompactTable() {}
 
-  private boolean major;
+  protected boolean major;
 
   @Override
   protected void perform(TableName table) throws Exception {
@@ -36,12 +36,12 @@ public class CompactTable extends TableBase {
   @Override
   protected void prePerform(TableName table) throws Exception {
     major = RANDOM.nextBoolean();
-    String msg = major ? "major" : "normal";
-    LOG.info("Perform " + msg + " compaction (it is an async call, don't know when will finish)");
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
+    String msg = major ? "major" : "normal";
+    LOG.info("Performed " + msg + " compaction (it is an async call, don't know when will finish)");
   }
 
 }
