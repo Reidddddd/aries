@@ -18,6 +18,7 @@ package org.apache.aries;
 
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.StringArrayParameter;
 import org.apache.aries.common.ToyUtils;
 

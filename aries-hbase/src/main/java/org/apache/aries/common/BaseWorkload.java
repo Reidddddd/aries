@@ -240,7 +240,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
       }
     }
     service.awaitTermination(30, TimeUnit.SECONDS);
-    return 0;
+    return RETURN_CODE.SUCCESS.code();
   }
 
   @Override

@@ -19,6 +19,7 @@ package org.apache.aries;
 import org.apache.aries.common.BaseWorkload;
 import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.IntParameter;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.ToyUtils;
 import org.apache.aries.factory.HandlerFactory;
 import org.apache.aries.factory.PutHandlerFactory;
@@ -76,7 +77,7 @@ public class PutWorkload extends BaseWorkload {
     LOG.info("Total wrote " + totalRows.get() + " rows in " + running_time.value() + " seconds.");
     LOG.info("Avg " + (double) (totalRows.get()) / running_time.value());
     LOG.info("Existing.");
-    return 0;
+    return RETURN_CODE.SUCCESS.code();
   }
 
   @Override protected String getParameterPrefix() {

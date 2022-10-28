@@ -17,6 +17,7 @@
 package org.apache.aries.action;
 
 import org.apache.aries.RemoteSSH;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.ServerName;
@@ -86,9 +87,9 @@ public abstract class RestartBase extends Action {
       chaos();
     } catch (Throwable t) {
       LOG.warning(ToyUtils.buildError(t));
-      return 1;
+      return RETURN_CODE.FAILURE.code();
     }
-    return 0;
+    return RETURN_CODE.SUCCESS.code();
   }
 
   protected void chaos() throws Exception {
@@ -126,10 +127,6 @@ public abstract class RestartBase extends Action {
 
   protected String signalCommand(ServiceType service, Signal signal) {
     return String.format("%s | xargs kill -s %s", findPidCommand(service), signal);
-  }
-
-  protected long getTimeoutInMilliSeconds(int timeout_in_seconds) {
-    return TimeUnit.MILLISECONDS.convert(timeout_in_seconds, TimeUnit.SECONDS);
   }
 
   protected long sleepInterval() {

@@ -20,6 +20,7 @@ import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.FileLineIterator;
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.StringArrayParameter;
 import org.apache.aries.common.StringParameter;
 

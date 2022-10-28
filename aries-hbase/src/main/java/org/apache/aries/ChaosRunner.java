@@ -36,6 +36,7 @@ import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.FloatParameter;
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.StringArrayParameter;
 import org.apache.aries.common.StringParameter;
 
@@ -317,7 +318,7 @@ public class ChaosRunner extends AbstractHBaseToy {
           it.remove();
           if (f.get() == ERROR) {
             LOG.warning("Exiting...");
-            System.exit(1);
+            return RETURN_CODE.FAILURE.code();
           }
           noRelease = false;
           break;
@@ -334,11 +335,11 @@ public class ChaosRunner extends AbstractHBaseToy {
     for (Future<Integer> remaining : futures) {
       if (remaining.get() == ERROR) {
         LOG.warning("Exiting...");
-        System.exit(1);
+        return RETURN_CODE.FAILURE.code();
       }
     }
 
-    return 0;
+    return RETURN_CODE.SUCCESS.code();
   }
 
 }

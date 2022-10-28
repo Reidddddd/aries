@@ -18,6 +18,7 @@ package org.apache.aries;
 
 import org.apache.aries.common.FileLineIterator;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.StringParameter;
 
 import java.io.File;
@@ -90,7 +91,7 @@ public class LinesToString extends AbstractJavaToy {
     String near_the_result = builder.toString();
     String result = near_the_result.substring(0, near_the_result.lastIndexOf(separtor.value())) + rght_wrapper;
     LOG.info("Processed outcome: " + result);
-    return 0;
+    return RETURN_CODE.SUCCESS.code();
   }
 
   @Override

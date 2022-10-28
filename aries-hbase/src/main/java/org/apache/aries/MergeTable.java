@@ -19,6 +19,7 @@ package org.apache.aries;
 import org.apache.aries.common.Constants;
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.RegionInfo;
 import org.apache.aries.common.StringParameter;
 import org.apache.aries.common.TableInfo;
@@ -135,7 +136,7 @@ public class MergeTable extends AbstractHBaseToy {
       LOG.info("Sleeping for " + runs_interval_sec.value() + " seconds to wait for CatalogJanitor cleaning merged regions.");
       TimeUnit.SECONDS.sleep(runs_interval_sec.value());
     } while (--round != 0);
-    return 0;
+    return RETURN_CODE.SUCCESS.code();
   }
 
   private int calculateHowManyRuns(TableInfo table) {

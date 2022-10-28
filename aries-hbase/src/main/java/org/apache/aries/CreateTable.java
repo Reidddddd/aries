@@ -16,6 +16,7 @@
 
 package org.apache.aries;
 
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HColumnDescriptor;

@@ -16,6 +16,7 @@
 
 package org.apache.aries;
 
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.security.access.AccessControlClient;

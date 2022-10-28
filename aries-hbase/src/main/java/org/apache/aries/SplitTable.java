@@ -19,6 +19,7 @@ package org.apache.aries;
 import org.apache.aries.common.Constants;
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.RegionInfo;
 import org.apache.aries.common.StringArrayParameter;
 import org.apache.aries.common.StringParameter;

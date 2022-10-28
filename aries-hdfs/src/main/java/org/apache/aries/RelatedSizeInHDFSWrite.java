@@ -18,6 +18,7 @@ package org.apache.aries;
 
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Options;
 import org.apache.hadoop.hdfs.client.impl.DfsClientConf;

@@ -16,6 +16,7 @@
 
 package org.apache.aries;
 
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;

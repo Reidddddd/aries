@@ -17,6 +17,7 @@
 package org.apache.aries;
 
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.StringArrayParameter;
 
 import java.sql.PreparedStatement;

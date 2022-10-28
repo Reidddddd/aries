@@ -16,6 +16,7 @@
 
 package org.apache.aries;
 
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.aries.common.BoolParameter;
@@ -82,7 +83,7 @@ public class DumpOrRenameTable extends AbstractHBaseToy {
         }
       }
     });
-    return 0;
+    return RETURN_CODE.SUCCESS.code();
   }
 
   @Override protected void destroyToy() throws Exception {

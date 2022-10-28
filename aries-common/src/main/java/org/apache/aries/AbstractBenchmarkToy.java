@@ -20,6 +20,7 @@ import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.StringParameter;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.profile.GCProfiler;

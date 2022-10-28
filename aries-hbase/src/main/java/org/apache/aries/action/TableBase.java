@@ -16,6 +16,7 @@
 
 package org.apache.aries.action;
 
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
@@ -76,9 +77,9 @@ public abstract class TableBase extends Action {
       }
     } catch (Throwable t) {
       LOG.warning(ToyUtils.buildError(t));
-      return 1;
+      return RETURN_CODE.FAILURE.code();
     }
-    return 0;
+    return RETURN_CODE.SUCCESS.code();
   }
 
   protected abstract void perform(TableName table) throws Exception;

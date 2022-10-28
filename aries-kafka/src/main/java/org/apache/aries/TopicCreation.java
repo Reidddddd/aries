@@ -15,6 +15,7 @@
  */
 package org.apache.aries;
 
+import org.apache.aries.common.RETURN_CODE;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;

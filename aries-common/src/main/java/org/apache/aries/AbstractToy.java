@@ -18,6 +18,7 @@ package org.apache.aries;
 
 import org.apache.aries.common.HelpPrinter;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -166,21 +167,5 @@ public abstract class AbstractToy implements Toy {
    * @throws Exception throw exception if any
    */
   protected abstract void destroyToy() throws Exception;
-
-  protected enum RETURN_CODE {
-    HELP(-2),
-    SUCCESS(0),
-    FAILURE(1);
-
-    private int return_code;
-
-    RETURN_CODE(int return_code) {
-      this.return_code = return_code;
-    }
-
-    protected int code() {
-      return return_code;
-    }
-  }
 
 }
