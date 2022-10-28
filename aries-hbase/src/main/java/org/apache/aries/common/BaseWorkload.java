@@ -39,36 +39,51 @@ import java.util.concurrent.TimeUnit;
 public abstract class BaseWorkload extends AbstractHBaseToy {
 
   protected final Parameter<Integer> num_connections =
-      IntParameter.newBuilder(getParameterPrefix() + ".num_connections").setRequired()
+      IntParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + "num_connections")
+                  .setRequired()
                   .setDescription("Number of connections used for worker")
-                  .addConstraint(v -> v > 0).opt();
+                  .addConstraint(v -> v > 0)
+                  .opt();
   private final Parameter<String> table_name =
-      StringParameter.newBuilder(getParameterPrefix() + ".target_table").setRequired()
-                     .setDescription("A table to be processed").opt();
-  protected final Parameter<String> family =
-      StringParameter.newBuilder(getParameterPrefix() + ".target_family")
-                     .setDescription("A family that belongs to the target_table, and wanted to be processed")
-                     .setRequired().opt();
-  protected final Parameter<Integer> running_time =
-      IntParameter.newBuilder(getParameterPrefix() + ".running_time").setDescription("How long this application run (in seconds").opt();
-  private final Parameter<Enum> value_kind =
-      EnumParameter.newBuilder(getParameterPrefix() + ".value_kind", VALUE_KIND.FIXED, VALUE_KIND.class)
-                   .setDescription("After the value read, it will be used to verify the result").opt();
-  protected final Parameter<Integer> key_length =
-      IntParameter.newBuilder(getParameterPrefix() + ".key_length").setDefaultValue(Constants.DEFAULT_KEY_LENGTH_PW)
-                  .setDescription("The length of the generated key in bytes.").opt();
-  protected final Parameter<Enum> key_kind =
-      EnumParameter.newBuilder(getParameterPrefix() + ".key_kind", KEY_PREFIX.NONE, KEY_PREFIX.class)
-                   .setDescription("Key prefix type: NONE, HEX, DEC, SEQ.").opt();
-  protected final Parameter<Integer> records_num =
-      IntParameter.newBuilder(getParameterPrefix() + ".records_num").setDescription("How many records will be put or read under SEQ key kind.").opt();
+      StringParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + "target_table")
+                     .setRequired()
+                     .setDescription("A table to be processed")
+                     .opt();
   protected final Parameter<Integer> report_interval =
-      IntParameter.newBuilder(getParameterPrefix() + ".report_interval").setDefaultValue(1)
+      IntParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + "report_interval")
+                  .setDefaultValue(1)
                   .setDescription("The interval for metrics output to console, in seconds.")
                   .opt();
+  protected final Parameter<Integer> running_time =
+      IntParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + "running_time")
+                  .setDescription("How long this application run (in seconds")
+                  .opt();
+  protected final Parameter<String> family =
+      StringParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + BaseHandler.FAMILY)
+                     .setDescription("A family that belongs to the target_table, and wanted to be processed")
+                     .setRequired()
+                     .opt();
+  private final Parameter<Enum> value_kind =
+      EnumParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + BaseHandler.VALUE_KINE, VALUE_KIND.FIXED, VALUE_KIND.class)
+                   .setDescription("After the value read, it will be used to verify the result")
+                   .opt();
+  protected final Parameter<Integer> key_length =
+      IntParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + BaseHandler.KEY_LENGTH)
+                  .setDefaultValue(Constants.DEFAULT_KEY_LENGTH_PW)
+                  .setDescription("The length of the generated key in bytes.")
+                  .opt();
+  protected final Parameter<Enum> key_kind =
+      EnumParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + BaseHandler.KEY_KIND, KEY_PREFIX.NONE, KEY_PREFIX.class)
+                   .setDescription("Key prefix type: NONE, HEX, DEC, SEQ.")
+                   .opt();
+  protected final Parameter<Integer> records_num =
+      IntParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + BaseHandler.RECORDS_NUM)
+                  .setDescription("How many records will be put or read under SEQ key kind.")
+                  .opt();
   private final Parameter<Boolean> shared_connection =
-      BoolParameter.newBuilder(getParameterPrefix() + ".shared_connection", false)
-                   .setDescription("If set true, all connections in fact will share one connection underlying").opt();
+      BoolParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + BaseHandler.SHARED_CONNECTION, false)
+                   .setDescription("If set true, all connections in fact will share one connection underlying")
+                   .opt();
 
   private final Object mutex = new Object();
   private final MetricRegistry registry = MetricRegistryInstance.getMetricRegistry();
@@ -128,7 +143,7 @@ public abstract class BaseWorkload extends AbstractHBaseToy {
 
   public interface Callback {
 
-    public void onFinished();
+    void onFinished();
 
   }
 

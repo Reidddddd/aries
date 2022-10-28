@@ -37,8 +37,8 @@ public class GetHandlerFactory extends HandlerFactory {
     super(configuration, parameters);
 
     for (Parameter parameter : parameters) {
-      if (parameter.key().contains(GetHandler.RANDOM_OPS))  hbase_conf.setBoolean(GetHandler.RANDOM_OPS, (Boolean) parameter.value());
-      if (parameter.key().contains(GetHandler.RESULT_VERIFICATION))  hbase_conf.setBoolean(GetHandler.RESULT_VERIFICATION, (Boolean) parameter.value());
+      if (parameter.key().contains(GetHandler.RANDOM_OPS))          hbase_conf.setBoolean(GetHandler.RANDOM_OPS, (Boolean) parameter.value());
+      if (parameter.key().contains(GetHandler.RESULT_VERIFICATION)) hbase_conf.setBoolean(GetHandler.RESULT_VERIFICATION, (Boolean) parameter.value());
     }
   }
 
@@ -50,7 +50,6 @@ public class GetHandlerFactory extends HandlerFactory {
   public static class GetHandler extends ReadHandler {
 
     public static final String RANDOM_OPS = "random_key";
-
     public static final String RESULT_VERIFICATION = "result_verification";
 
     GetHandler(Configuration conf, TableName table) throws IOException {

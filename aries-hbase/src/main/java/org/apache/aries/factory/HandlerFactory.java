@@ -50,11 +50,11 @@ public abstract class HandlerFactory {
     hbase_conf = ConfigurationFactory.createHBaseConfiguration(configuration);
 
     for (Parameter parameter : parameters) {
-      if (parameter.key().contains(BaseHandler.FAMILY))     hbase_conf.set(BaseHandler.FAMILY, (String) parameter.value());
-      if (parameter.key().contains(BaseHandler.KEY_KIND))   hbase_conf.setEnum(BaseHandler.KEY_KIND, (KEY_PREFIX) parameter.value());
-      if (parameter.key().contains(BaseHandler.KEY_LENGTH)) hbase_conf.setInt(BaseHandler.KEY_LENGTH, (Integer) parameter.value());
-      if (parameter.key().contains(BaseHandler.VALUE_KINE)) hbase_conf.setEnum(BaseHandler.VALUE_KINE, (VALUE_KIND) parameter.value());
-      if (parameter.key().contains(BaseHandler.RECORDS_NUM)) hbase_conf.setInt(BaseHandler.RECORDS_NUM, (Integer) parameter.value());
+      if (parameter.key().contains(BaseHandler.FAMILY))            hbase_conf.set(BaseHandler.FAMILY, (String) parameter.value());
+      if (parameter.key().contains(BaseHandler.KEY_KIND))          hbase_conf.setEnum(BaseHandler.KEY_KIND, (KEY_PREFIX) parameter.value());
+      if (parameter.key().contains(BaseHandler.KEY_LENGTH))        hbase_conf.setInt(BaseHandler.KEY_LENGTH, (Integer) parameter.value());
+      if (parameter.key().contains(BaseHandler.VALUE_KINE))        hbase_conf.setEnum(BaseHandler.VALUE_KINE, (VALUE_KIND) parameter.value());
+      if (parameter.key().contains(BaseHandler.RECORDS_NUM))       hbase_conf.setInt(BaseHandler.RECORDS_NUM, (Integer) parameter.value());
       if (parameter.key().contains(BaseHandler.SHARED_CONNECTION)) hbase_conf.setBoolean(BaseHandler.SHARED_CONNECTION, (Boolean) parameter.value());
     }
   }
@@ -63,12 +63,12 @@ public abstract class HandlerFactory {
 
   public static abstract class BaseHandler extends Thread {
 
-    static final String FAMILY = "family";
-    static final String KEY_KIND = "key_kind";
-    static final String KEY_LENGTH = "key_length";
-    static final String VALUE_KINE = "value_kind";
-    static final String RECORDS_NUM = "records_num";
-    static final String SHARED_CONNECTION = "shared_connection";
+    public static final String FAMILY = "target_family";
+    public static final String KEY_KIND = "key_kind";
+    public static final String KEY_LENGTH = "key_length";
+    public static final String VALUE_KINE = "value_kind";
+    public static final String RECORDS_NUM = "records_num";
+    public static final String SHARED_CONNECTION = "shared_connection";
 
     protected static final Logger LOG = Logger.getLogger(BaseHandler.class.getName());
     protected static final MetricRegistry registry = MetricRegistryInstance.getMetricRegistry();

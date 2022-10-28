@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 
 public final class ToyUtils {
 
+  public final static String PARAMETER_SEPARATOR = ".";
+
   public static void assertLengthValid(String[] res, int expected) {
     if (res.length != expected) {
       throw new IllegalArgumentException();

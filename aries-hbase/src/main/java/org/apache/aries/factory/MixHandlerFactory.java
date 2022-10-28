@@ -19,6 +19,7 @@ package org.apache.aries.factory;
 import org.apache.aries.MixWorkload.MODE;
 import org.apache.aries.ToyConfiguration;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.factory.GetHandlerFactory.GetHandler;
 import org.apache.aries.factory.PutHandlerFactory.PutHandler;
 import org.apache.aries.factory.ScanHandlerFactory.ScanHandler;
 import org.apache.hadoop.hbase.TableName;
@@ -37,9 +38,11 @@ public class MixHandlerFactory extends HandlerFactory {
     super(configuration, parameters);
 
     for (Parameter parameter : parameters) {
-      if (parameter.key().contains(PutHandler.BUFFER_SIZE))          hbase_conf.setLong(PutHandler.BUFFER_SIZE, (Long) parameter.value());
-      if (parameter.key().contains(ScanHandler.REVERSE_ALLOWED))     hbase_conf.setBoolean(ScanHandler.REVERSE_ALLOWED, (Boolean) parameter.value());
-      if (parameter.key().contains(ScanHandler.RESULT_VERIFICATION)) hbase_conf.setBoolean(ScanHandler.RESULT_VERIFICATION, (Boolean) parameter.value());
+      if (parameter.key().contains(PutHandler.BUFFER_SIZE))          hbase_conf.setLong(PutHandler.BUFFER_SIZE, (long) parameter.value());
+      if (parameter.key().contains(PutHandler.VALUE_SIZE))           hbase_conf.setInt(PutHandler.VALUE_SIZE, (int) parameter.value());
+      if (parameter.key().contains(ScanHandler.REVERSE_ALLOWED))     hbase_conf.setBoolean(ScanHandler.REVERSE_ALLOWED, (boolean) parameter.value());
+      if (parameter.key().contains(ScanHandler.RESULT_VERIFICATION)) hbase_conf.setBoolean(ScanHandler.RESULT_VERIFICATION, (boolean) parameter.value());
+      if (parameter.key().contains(GetHandler.RANDOM_OPS))           hbase_conf.setBoolean(GetHandler.RANDOM_OPS, (boolean) parameter.value());
     }
 
     m = mode;
@@ -54,6 +57,14 @@ public class MixHandlerFactory extends HandlerFactory {
         if (l_handlers-- > 0) return new PutHandler(hbase_conf, table);
         if (r_handlers-- > 0) return new ScanHandler(hbase_conf, table);
         break;
+      }
+      case PUT_GET: {
+        if (l_handlers-- > 0) return new PutHandler(hbase_conf, table);
+        if (r_handlers-- > 0) return new GetHandler(hbase_conf, table);
+      }
+      case SCAN_GET: {
+        if (l_handlers-- > 0) return new ScanHandler(hbase_conf, table);
+        if (r_handlers-- > 0) return new GetHandler(hbase_conf, table);
       }
       default:
         throw new IOException("Unsupported pattern");

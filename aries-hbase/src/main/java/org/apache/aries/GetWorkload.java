@@ -18,26 +18,24 @@ package org.apache.aries;
 
 import org.apache.aries.common.BaseWorkload;
 import org.apache.aries.common.BoolParameter;
-import org.apache.aries.common.Constants;
-import org.apache.aries.common.IntParameter;
-import org.apache.aries.common.KEY_PREFIX;
-import org.apache.aries.common.LongParameter;
 import org.apache.aries.common.Parameter;
+import org.apache.aries.common.ToyUtils;
 import org.apache.aries.factory.GetHandlerFactory;
+import org.apache.aries.factory.GetHandlerFactory.GetHandler;
 import org.apache.aries.factory.HandlerFactory;
-import org.apache.aries.factory.PutHandlerFactory;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class GetWorkload extends BaseWorkload {
 
   private final Parameter<Boolean> random_ops =
-      BoolParameter.newBuilder(getParameterPrefix() + ".random_key", true)
-                   .setDescription("It must be set false, if using SEQ key mode").opt();
+      BoolParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + GetHandler.RANDOM_OPS, true)
+                   .setDescription("It must be set false, if using SEQ key mode")
+                   .opt();
   private final Parameter<Boolean> result_verification =
-      BoolParameter.newBuilder(getParameterPrefix() + ".result_verification", false)
-                   .setDescription("If set true, there will be verification for the returned results").opt();
+      BoolParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + GetHandler.RESULT_VERIFICATION, false)
+                   .setDescription("If set true, there will be verification for the returned results")
+                   .opt();
 
   @Override
   public void requisite(List<Parameter> requisites) {
@@ -51,15 +49,6 @@ public class GetWorkload extends BaseWorkload {
     super.exampleConfiguration();
     example(random_ops.key(), "true");
     example(result_verification.key(), "false");
-  }
-
-  @Override
-  protected void midCheck() {
-    super.midCheck();
-    KEY_PREFIX prefix = (KEY_PREFIX) key_kind.value();
-    if (prefix != KEY_PREFIX.SEQ) {
-      throw new IllegalArgumentException("If must be set SEQ key kind when using GetWorkload");
-    }
   }
 
   @Override

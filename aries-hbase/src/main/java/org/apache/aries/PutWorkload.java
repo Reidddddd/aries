@@ -19,9 +19,10 @@ package org.apache.aries;
 import org.apache.aries.common.BaseWorkload;
 import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.IntParameter;
-import org.apache.aries.common.KEY_PREFIX;
+import org.apache.aries.common.ToyUtils;
 import org.apache.aries.factory.HandlerFactory;
 import org.apache.aries.factory.PutHandlerFactory;
+import org.apache.aries.factory.PutHandlerFactory.PutHandler;
 import org.apache.aries.common.Constants;
 import org.apache.aries.common.LongParameter;
 import org.apache.aries.common.Parameter;
@@ -32,14 +33,19 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PutWorkload extends BaseWorkload {
 
   private final Parameter<Long> buffer_size =
-      LongParameter.newBuilder(getParameterPrefix() + ".buffer_size").setDefaultValue(Constants.ONE_MB)
-                   .setDescription("Buffer size in bytes for batch put").opt();
+      LongParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + PutHandler.BUFFER_SIZE)
+                   .setDefaultValue(Constants.ONE_MB)
+                   .setDescription("Buffer size in bytes for batch put")
+                   .opt();
   private final Parameter<Boolean> random_ops =
-      BoolParameter.newBuilder(getParameterPrefix() + ".random_key", true)
-                   .setDescription("It must be set false, if using SEQ key mode").opt();
+      BoolParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + PutHandler.RANDOM_OPS, true)
+                   .setDescription("It must be set false, if using SEQ key mode")
+                   .opt();
   private final Parameter<Integer> value_size_in_bytes =
-      IntParameter.newBuilder(getParameterPrefix() + ".value_size_in_bytes").setRequired()
-                  .setDescription("Size of each value being put, in byte unit").opt();
+      IntParameter.newBuilder(getParameterPrefix() + ToyUtils.PARAMETER_SEPARATOR + PutHandler.VALUE_SIZE)
+                  .setRequired()
+                  .setDescription("Size of each value being put, in byte unit")
+                  .opt();
 
   private final AtomicLong totalRows = new AtomicLong(0);
 
