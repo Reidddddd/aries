@@ -16,6 +16,7 @@
 
 package org.apache.aries.action;
 
+import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.regionserver.BloomType;
 
@@ -25,25 +26,24 @@ public class AlterBloomFilter extends AlterBase {
 
   public AlterBloomFilter() {}
 
-  protected void alter(TableName table) throws Exception {
+  protected void alter(TableName table, HColumnDescriptor family) throws Exception {
     switch (bloom) {
       case    ROW: bloom = RANDOM.nextBoolean() ? BloomType.ROWCOL : BloomType.NONE; break;
       case ROWCOL: bloom = RANDOM.nextBoolean() ? BloomType.ROW    : BloomType.NONE; break;
       case   NONE: bloom = RANDOM.nextBoolean() ? BloomType.ROWCOL : BloomType.ROW;  break;
     }
-    descriptor.setBloomFilterType(bloom);
-    admin.modifyColumn(table, descriptor);
+    family.setBloomFilterType(bloom);
+    admin.modifyColumn(table, family);
   }
 
-  protected void preAlter(TableName table) throws Exception {
-    super.preAlter(table);
-    descriptor = admin.getTableDescriptor(table).getColumnFamilies()[0];
-         bloom = descriptor.getBloomFilterType();
+  protected void preAlter(TableName table, HColumnDescriptor family) throws Exception {
+    super.preAlter(table, family);
+    bloom = family.getBloomFilterType();
     LOG.info("Current bloom filter of " + table + " is " + bloom);
   }
 
-  protected void postAlter(TableName table) throws Exception {
-    super.postAlter(table);
+  protected void postAlter(TableName table, HColumnDescriptor family) throws Exception {
+    super.postAlter(table, family);
     LOG.info("Finish altering bloom filter of " + table + " to " + bloom + " in " + getDuration() + " seconds");
   }
 

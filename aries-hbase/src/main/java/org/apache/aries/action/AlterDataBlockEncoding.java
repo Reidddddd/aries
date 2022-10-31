@@ -18,47 +18,45 @@ package org.apache.aries.action;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
+import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 
-public class AlterCompression extends AlterBase {
+public class AlterDataBlockEncoding extends AlterBase {
 
-  private Algorithm compression;
+  private DataBlockEncoding encoding;
 
-  public AlterCompression() {}
+  public AlterDataBlockEncoding() {}
 
   protected void alter(TableName table, HColumnDescriptor family) throws Exception {
-    int index = RANDOM.nextInt(7);
+    int index = RANDOM.nextInt(5);
     while (true) {
-      Algorithm new_algo;
+      DataBlockEncoding new_encode;
       switch (index) {
-         case 0: new_algo = Algorithm.NONE;   break;
-         case 1: new_algo = Algorithm.ZSTD;   break;
-         case 2: new_algo = Algorithm.BZIP2;  break;
-         case 3: new_algo = Algorithm.GZ;     break;
-         case 4: new_algo = Algorithm.LZ4;    break;
-         case 5: new_algo = Algorithm.LZO;    break;
-         case 6: new_algo = Algorithm.SNAPPY; break;
-        default: new_algo = Algorithm.NONE;   break;
+         case 0: new_encode = DataBlockEncoding.NONE;         break;
+         case 1: new_encode = DataBlockEncoding.DIFF;         break;
+         case 2: new_encode = DataBlockEncoding.FAST_DIFF;    break;
+         case 3: new_encode = DataBlockEncoding.ROW_INDEX_V1; break;
+         case 4: new_encode = DataBlockEncoding.PREFIX;       break;
+        default: new_encode = DataBlockEncoding.NONE;         break;
       }
-      if (new_algo == compression) {
+      if (new_encode == encoding) {
         continue;
       }
-      compression = new_algo;
+      encoding = new_encode;
       break;
     }
-    family.setCompressionType(compression);
+    family.setDataBlockEncoding(encoding);
     admin.modifyColumn(table, family);
   }
 
   protected void preAlter(TableName table, HColumnDescriptor family) throws Exception {
     super.preAlter(table, family);
-    compression = family.getCompression();
-    LOG.info("Current compression of " + table + " is " + compression);
+    encoding = family.getDataBlockEncoding();
+    LOG.info("Current data block encoding of " + table + " is " + encoding);
   }
 
   protected void postAlter(TableName table, HColumnDescriptor family) throws Exception {
     super.postAlter(table, family);
-    LOG.info("Finish altering compression of " + table + " to " + compression + " in " + getDuration() + " seconds");
+    LOG.info("Finish altering data block encoding of " + table + " to " + encoding + " in " + getDuration() + " seconds");
   }
 
 }

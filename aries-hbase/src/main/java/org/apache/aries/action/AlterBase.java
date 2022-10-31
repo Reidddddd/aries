@@ -23,22 +23,26 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
 import java.util.Random;
 
 public abstract class AlterBase extends Action {
 
-  public final static String TABLE_NAME = "alter_base_action.table.name";
+  public final static String  TABLE_NAME = "alter_base_action.table.name";
+  public final static String FAMILY_NAME = "alter_base_action.family.name";
 
   protected final Random RANDOM = new Random();
+  protected final byte[] EMPTY = Bytes.toBytes("");
 
   protected boolean random_pick = false;
   protected TableName table;
   protected Admin admin;
   protected long start_time;
   protected long duration;
-  protected HColumnDescriptor descriptor;
+
+  private byte[] family;
 
   public AlterBase() {}
 
@@ -50,6 +54,8 @@ public abstract class AlterBase extends Action {
     if (table_name == null || table_name.isEmpty()) random_pick = true;
     else table = TableName.valueOf(table_name);
 
+    String family_name = configuration.get("cr." + FAMILY_NAME);
+    family = (family_name == null || family_name.isEmpty()) ? EMPTY : Bytes.toBytes(family_name);
   }
 
   @Override
@@ -63,9 +69,13 @@ public abstract class AlterBase extends Action {
         picked = table;
       }
 
-      preAlter(picked);
-      alter(picked);
-      postAlter(picked);
+      HColumnDescriptor descriptor = Bytes.equals(family, EMPTY) ?
+          admin.getTableDescriptor(table).getColumnFamilies()[0] :
+          admin.getTableDescriptor(table).getFamily(family);
+
+      preAlter(picked, descriptor);
+      alter(picked, descriptor);
+      postAlter(picked, descriptor);
     } catch (Throwable t) {
       LOG.warning(ToyUtils.buildError(t));
       return RETURN_CODE.FAILURE.code();
@@ -73,13 +83,13 @@ public abstract class AlterBase extends Action {
     return RETURN_CODE.SUCCESS.code();
   }
 
-  protected abstract void alter(TableName table) throws Exception;
+  protected abstract void alter(TableName table, HColumnDescriptor family) throws Exception;
 
-  protected void preAlter(TableName table) throws Exception {
+  protected void preAlter(TableName table, HColumnDescriptor family) throws Exception {
     start_time = System.currentTimeMillis();
   }
 
-  protected void postAlter(TableName table) throws Exception {
+  protected void postAlter(TableName table, HColumnDescriptor family) throws Exception {
     duration = System.currentTimeMillis() - start_time;
   }
 
