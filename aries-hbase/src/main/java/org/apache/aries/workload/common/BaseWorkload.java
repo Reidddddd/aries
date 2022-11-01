@@ -14,15 +14,24 @@
  * limitations under the License.
  */
 
-package org.apache.aries.common;
+package org.apache.aries.workload.common;
 
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;
 import org.apache.aries.AbstractHBaseToy;
-import org.apache.aries.PutWorkload;
+import org.apache.aries.common.BoolParameter;
+import org.apache.aries.common.Constants;
+import org.apache.aries.common.EnumParameter;
+import org.apache.aries.common.IntParameter;
+import org.apache.aries.common.MetricRegistryInstance;
+import org.apache.aries.common.Parameter;
+import org.apache.aries.common.RETURN_CODE;
+import org.apache.aries.common.StringParameter;
+import org.apache.aries.common.ToyUtils;
+import org.apache.aries.workload.PutWorkload;
 import org.apache.aries.ToyConfiguration;
-import org.apache.aries.factory.HandlerFactory;
-import org.apache.aries.factory.HandlerFactory.BaseHandler;
+import org.apache.aries.workload.factory.HandlerFactory;
+import org.apache.aries.workload.factory.HandlerFactory.BaseHandler;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Admin;

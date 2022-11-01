@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.aries.factory;
+package org.apache.aries.workload.factory;
 
 import com.codahale.metrics.Timer;
 import org.apache.aries.ToyConfiguration;

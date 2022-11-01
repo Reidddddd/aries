@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package org.apache.aries.factory;
+package org.apache.aries.workload.factory;
 
-import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import org.apache.aries.ConfigurationFactory;
 import org.apache.aries.ToyConfiguration;
-import org.apache.aries.common.BaseWorkload.Callback;
-import org.apache.aries.common.KEY_PREFIX;
+import org.apache.aries.workload.common.BaseWorkload.Callback;
+import org.apache.aries.workload.common.KEY_PREFIX;
 import org.apache.aries.common.MetricRegistryInstance;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.ToyUtils;
-import org.apache.aries.common.VALUE_KIND;
+import org.apache.aries.workload.common.VALUE_KIND;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;

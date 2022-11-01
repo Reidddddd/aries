@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.aries.common;
+package org.apache.aries.workload.common;
 
 public enum VALUE_KIND {
   RANDOM, FIXED

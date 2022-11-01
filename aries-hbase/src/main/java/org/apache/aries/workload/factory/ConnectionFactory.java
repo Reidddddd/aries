@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.aries.factory;
+package org.apache.aries.workload.factory;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Connection;

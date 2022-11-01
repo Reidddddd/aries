@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package org.apache.aries.factory;
+package org.apache.aries.workload.factory;
 
 import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
 import org.apache.aries.ToyConfiguration;
-import org.apache.aries.common.KEY_PREFIX;
 import org.apache.aries.common.Parameter;
-import org.apache.aries.common.VALUE_KIND;
-import org.apache.aries.handler.ReadHandler;
+import org.apache.aries.workload.common.VALUE_KIND;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.BufferedMutator;
-import org.apache.hadoop.hbase.client.BufferedMutatorParams;
-import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;

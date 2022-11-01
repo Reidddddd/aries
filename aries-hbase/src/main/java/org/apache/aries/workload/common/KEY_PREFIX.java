@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.aries.common;
+package org.apache.aries.workload.common;
 
 public enum KEY_PREFIX {
   NONE, DEC, HEX, SEQ

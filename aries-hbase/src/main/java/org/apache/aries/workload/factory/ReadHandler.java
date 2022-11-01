@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.apache.aries.handler;
+package org.apache.aries.workload.factory;
 
 import com.codahale.metrics.Counter;
-import org.apache.aries.factory.HandlerFactory.BaseHandler;
+import org.apache.aries.workload.factory.HandlerFactory.BaseHandler;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 

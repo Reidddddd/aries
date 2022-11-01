@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package org.apache.aries;
+package org.apache.aries.workload;
 
-import org.apache.aries.common.BaseWorkload;
+import org.apache.aries.ToyConfiguration;
+import org.apache.aries.workload.common.BaseWorkload;
 import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.ToyUtils;
-import org.apache.aries.factory.HandlerFactory;
-import org.apache.aries.factory.PutHandlerFactory;
-import org.apache.aries.factory.PutHandlerFactory.PutHandler;
+import org.apache.aries.workload.factory.HandlerFactory;
+import org.apache.aries.workload.factory.PutHandlerFactory;
+import org.apache.aries.workload.factory.PutHandlerFactory.PutHandler;
 import org.apache.aries.common.Constants;
 import org.apache.aries.common.LongParameter;
 import org.apache.aries.common.Parameter;
