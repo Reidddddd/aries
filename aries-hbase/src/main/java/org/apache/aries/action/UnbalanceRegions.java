@@ -35,13 +35,12 @@ import java.util.stream.Collectors;
 
 public class UnbalanceRegions extends Action {
 
-  public final static String      UNBALANCE_RATIO = "unbalance_region.ratio";
+  public final static String UNBALANCE_RATIO = "unbalance_region.ratio";
 
   private final Random RANDOM = new Random();
 
   private Admin admin;
   private float ratio;
-  private int sleep_secs;
 
   public UnbalanceRegions() {}
 

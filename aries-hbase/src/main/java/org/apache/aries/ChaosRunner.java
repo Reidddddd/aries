@@ -17,6 +17,7 @@
 package org.apache.aries;
 
 import org.apache.aries.action.Action;
+import org.apache.aries.action.AlterBase;
 import org.apache.aries.action.BatchRestartRegionServer;
 import org.apache.aries.action.CompactRegionsOfTable;
 import org.apache.aries.action.FlushRegionsOfTable;
@@ -31,6 +32,7 @@ import org.apache.aries.action.RestartZookeeper;
 import org.apache.aries.action.RollingRestartRegionServer;
 import org.apache.aries.action.SplitRegionsOfTable;
 import org.apache.aries.action.TableBase;
+import org.apache.aries.action.UnbalanceRegions;
 import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.FloatParameter;
@@ -177,6 +179,21 @@ public class ChaosRunner extends AbstractHBaseToy {
                     .setDefaultValue(0.2f).addConstraint(r -> r > 0).addConstraint(r -> r < 1.0)
                     .setDescription("A ratio of regions to be merged").opt();
 
+  // AlterBase
+  public final Parameter<String> alter_table_name =
+      StringParameter.newBuilder(getParameterPrefix() + "." +  AlterBase.TABLE_NAME)
+          .setDescription("Table to perform alter action, if unspecified, random pick one existed table").opt();
+  public final Parameter<String> alter_family_name =
+      StringParameter.newBuilder(getParameterPrefix() + "." +  AlterBase.FAMILY_NAME)
+          .setDescription("Family of the specfied table to perform alter action, if unspecified, pick the first one (in alphabet order)").opt();
+
+  // Others
+  private final Parameter<Float> unbalance_region_ratio =
+      FloatParameter.newBuilder(getParameterPrefix() + "." + UnbalanceRegions.UNBALANCE_RATIO)
+          .setDefaultValue(0.2f).addConstraint(r -> r > 0).addConstraint(r -> r < 1.0)
+          .setDescription("A ratio of regions to be unbalanced").opt();
+
+
   private final Random random = new Random();
   private final int ERROR = 1;
 
@@ -245,6 +262,15 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(split_table_region_ratio);
     requisites.add(move_table_region_ratio);
     requisites.add(merge_table_region_ratio);
+
+
+    // Alter base
+    requisites.add(alter_table_name);
+    requisites.add(alter_family_name);
+
+
+    // Others
+    requisites.add(unbalance_region_ratio);
   }
 
   @Override
@@ -290,6 +316,15 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(split_table_region_ratio.key(), "0.2");
     example(move_table_region_ratio.key(), "0.2");
     example(merge_table_region_ratio.key(), "0.2");
+
+
+    // Alter base
+    example(alter_table_name.key(), "NAMESPACE:table");
+    example(alter_family_name.key(), "f");
+
+
+    // Others
+    example(unbalance_region_ratio.key(), "0.2");
   }
 
   @Override
