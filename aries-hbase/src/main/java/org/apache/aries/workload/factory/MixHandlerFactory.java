@@ -16,12 +16,13 @@
 
 package org.apache.aries.workload.factory;
 
-import org.apache.aries.workload.MixWorkload.MODE;
+import org.apache.aries.MixWorkload.MODE;
 import org.apache.aries.ToyConfiguration;
 import org.apache.aries.common.Parameter;
-import org.apache.aries.workload.factory.GetHandlerFactory.GetHandler;
-import org.apache.aries.workload.factory.PutHandlerFactory.PutHandler;
-import org.apache.aries.workload.factory.ScanHandlerFactory.ScanHandler;
+import org.apache.aries.workload.common.BaseHandler;
+import org.apache.aries.workload.handler.GetHandler;
+import org.apache.aries.workload.handler.PutHandler;
+import org.apache.aries.workload.handler.ScanHandler;
 import org.apache.hadoop.hbase.TableName;
 
 import java.io.IOException;

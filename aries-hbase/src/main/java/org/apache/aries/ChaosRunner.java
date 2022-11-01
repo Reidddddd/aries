@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package org.apache.aries.chaos;
+package org.apache.aries;
 
-import org.apache.aries.AbstractHBaseToy;
-import org.apache.aries.ToyConfiguration;
 import org.apache.aries.chaos.action.Action;
 import org.apache.aries.chaos.action.AlterBase;
 import org.apache.aries.chaos.action.BatchRestartRegionServer;

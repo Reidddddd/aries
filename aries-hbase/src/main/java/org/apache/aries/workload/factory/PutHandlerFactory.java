@@ -16,15 +16,11 @@
 
 package org.apache.aries.workload.factory;
 
-import com.codahale.metrics.Timer;
 import org.apache.aries.ToyConfiguration;
 import org.apache.aries.common.Parameter;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.aries.workload.common.BaseHandler;
+import org.apache.aries.workload.handler.PutHandler;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.BufferedMutator;
-import org.apache.hadoop.hbase.client.BufferedMutatorParams;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
 import java.util.List;
@@ -44,50 +40,6 @@ public class PutHandlerFactory extends HandlerFactory {
   @Override
   public BaseHandler createHandler(TableName table) throws IOException {
     return new PutHandler(hbase_conf, table);
-  }
-
-  public static class PutHandler extends BaseHandler {
-
-    public static final String BUFFER_SIZE = "buffer_size";
-    public static final String RANDOM_OPS = "random_key";
-    public static final String VALUE_SIZE = "value_size_in_bytes";
-
-    PutHandler(Configuration conf, TableName table) throws IOException {
-      super(conf, table);
-    }
-
-    @Override
-    public void run() {
-      BufferedMutator mutator;
-      BufferedMutatorParams param = new BufferedMutatorParams(getTable());
-      param.writeBufferSize(hbase_conf.getLong(BUFFER_SIZE, 0L));
-      try {
-        mutator = connection.getBufferedMutator(param);
-        while (!isInterrupted() && sequence.get() <= records_num) {
-          try (final Timer.Context context = LATENCY.time()) {
-            String k = getKey(key_kind, key_length, hbase_conf.getBoolean(RANDOM_OPS, true));
-            byte[] value = getValue(value_kind, k, hbase_conf.getInt(VALUE_SIZE, 0));
-            Put put = new Put(Bytes.toBytes(k));
-            put.addColumn(
-                Bytes.toBytes(family),
-                Bytes.toBytes("q"),
-                value
-            );
-            mutator.mutate(put);
-          }
-        }
-        mutator.flush();
-        mutator.close();
-      } catch (Exception e) {
-        LOG.warning("Error occured!");
-        e.printStackTrace();
-      } finally {
-        if (callback != null) {
-          callback.onFinished();
-        }
-      }
-    }
-
   }
 
 }
