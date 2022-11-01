@@ -69,7 +69,7 @@ public class MixWorkload extends BaseWorkload {
                    .opt();
 
   public enum MODE {
-    PUT_SCAN, PUT_GET, SCAN_GET
+    PUT_SCAN, PUT_GET, GET_SCAN
   }
   private MODE mode;
   private int left, right;

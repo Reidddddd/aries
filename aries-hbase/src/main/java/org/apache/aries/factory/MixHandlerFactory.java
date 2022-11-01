@@ -62,9 +62,9 @@ public class MixHandlerFactory extends HandlerFactory {
         if (l_handlers-- > 0) return new PutHandler(hbase_conf, table);
         if (r_handlers-- > 0) return new GetHandler(hbase_conf, table);
       }
-      case SCAN_GET: {
-        if (l_handlers-- > 0) return new ScanHandler(hbase_conf, table);
-        if (r_handlers-- > 0) return new GetHandler(hbase_conf, table);
+      case GET_SCAN: {
+        if (l_handlers-- > 0) return new GetHandler(hbase_conf, table);
+        if (r_handlers-- > 0) return new ScanHandler(hbase_conf, table);
       }
       default:
         throw new IOException("Unsupported pattern");
