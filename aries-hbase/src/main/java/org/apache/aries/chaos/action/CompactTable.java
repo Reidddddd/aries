@@ -14,32 +14,36 @@
  * limitations under the License.
  */
 
-package org.apache.aries.action;
+package org.apache.aries.chaos.action;
 
 import org.apache.hadoop.hbase.TableName;
 
-public class SnapshotTable extends TableBase {
+public class CompactTable extends TableBase {
 
-  public SnapshotTable() {}
+  public CompactTable() {}
 
-  private String snapshot_name;
+  protected boolean major;
 
   @Override
   protected void perform(TableName table) throws Exception {
-    admin.snapshot(snapshot_name, table);
+    if (major) {
+      LOG.info("Major compacting " + table);
+      admin.majorCompact(table);
+    } else {
+      LOG.info("Compacting " + table);
+      admin.compact(table);
+    }
   }
 
   @Override
   protected void prePerform(TableName table) throws Exception {
-    super.prePerform(table);
-    snapshot_name = table.getNameAsString().replaceAll(":", "_") + System.currentTimeMillis();
-    LOG.info("Start snapshoting table " + table + " with snapshot name " + snapshot_name);
+    major = RANDOM.nextBoolean();
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
-    super.postPerform(table);
-    LOG.info("Finish snapshoting table " + table + " in " + getDuration() + " seconds");
+    String msg = major ? "major" : "normal";
+    LOG.info("Performed " + msg + " compaction (it is an async call, don't know when will finish)");
   }
 
 }

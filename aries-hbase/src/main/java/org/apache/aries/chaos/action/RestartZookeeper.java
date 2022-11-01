@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.aries.action;
+package org.apache.aries.chaos.action;
 
 import org.apache.aries.RemoteSSH;
 import org.apache.aries.common.ToyUtils;

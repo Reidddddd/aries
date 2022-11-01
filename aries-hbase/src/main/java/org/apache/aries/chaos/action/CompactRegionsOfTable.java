@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.aries.action;
+package org.apache.aries.chaos.action;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionInfo;
@@ -24,19 +24,19 @@ import org.apache.hadoop.hbase.client.Connection;
 import java.io.IOException;
 import java.util.List;
 
-public class SplitRegionsOfTable extends SplitTable {
+public class CompactRegionsOfTable extends CompactTable {
 
-  public final static String SPLIT_RATIO = "split_table_regions.ratio";
+  public final static String COMPACT_RATIO = "compact_table_regions.ratio";
 
   private float ratio;
   private List<HRegionInfo> regions;
 
-  public SplitRegionsOfTable() {}
+  public CompactRegionsOfTable() {}
 
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
-    ratio = configuration.getFloat("cr." + SPLIT_RATIO, 0.2f);
+    ratio = configuration.getFloat("cr." + COMPACT_RATIO, 0.2f);
   }
 
   @Override
@@ -44,19 +44,26 @@ public class SplitRegionsOfTable extends SplitTable {
     int number_regions = (int) (regions.size() * ratio);
     for (int i = 0; i < number_regions; i++) {
       HRegionInfo picked = regions.get(RANDOM.nextInt(regions.size()));
-      LOG.info("Splitting region " + picked.getRegionNameAsString() + " of " + table);
-      admin.splitRegion(picked.getRegionName());
+      if (major) {
+        LOG.info("Major compacting region " + picked.getRegionNameAsString() + " of " + table);
+        admin.majorCompactRegion(picked.getRegionName());
+      } else {
+        LOG.info("Compacting region " + picked.getRegionNameAsString() + " of " + table);
+        admin.compactRegion(picked.getRegionName());
+      }
     }
   }
 
   @Override
   protected void prePerform(TableName table) throws Exception {
+    super.prePerform(table);
+      major = RANDOM.nextBoolean();
     regions = admin.getTableRegions(table);
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
-    LOG.info("Performed split (it is an async call, don't know when will finish)");
+    LOG.info("Compaction is an async call, don't know when will finish");
   }
 
 }

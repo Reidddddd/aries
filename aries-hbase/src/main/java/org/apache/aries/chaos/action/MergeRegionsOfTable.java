@@ -14,58 +14,54 @@
  * limitations under the License.
  */
 
-package org.apache.aries.action;
+package org.apache.aries.chaos.action;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionInfo;
-import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
 import java.util.List;
 
-public class MoveRegionsOfTable extends TableBase {
+public class MergeRegionsOfTable extends TableBase {
 
-  public final static String MOVE_RATIO = "move_table_regions.ratio";
+  public final static String MERGE_RATIO = "merge_table_regions.ratio";
 
   private float ratio;
   private int number_regions;
   private List<HRegionInfo> regions;
-  private ServerName[] servers;
 
-  public MoveRegionsOfTable() {}
+  public MergeRegionsOfTable() {}
 
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
-    ratio = configuration.getFloat("cr." + MOVE_RATIO, 0.2f);
+    ratio = configuration.getFloat("cr." + MERGE_RATIO, 0.2f);
   }
 
   @Override
   protected void perform(TableName table) throws Exception {
     for (int i = 0; i < number_regions; i++) {
-      HRegionInfo picked = regions.get(RANDOM.nextInt(regions.size()));
-      ServerName server = servers[RANDOM.nextInt(servers.length)];
-
-      LOG.info("Moving region " + picked.getRegionNameAsString() + " of " + table + " to " + server);
-      admin.move(picked.getRegionName(), Bytes.toBytes(server.getServerName()));
+      int index = RANDOM.nextInt(regions.size());
+      HRegionInfo one = regions.get(index);
+      HRegionInfo another = regions.get(index == regions.size() - 1 ?
+                                        index - 1 :
+                                        index + 1);
+      LOG.info("Merging region " + one.getRegionNameAsString() + " and " + another.getRegionNameAsString() + " of " + table);
+      admin.mergeRegions(one.getRegionName(), another.getRegionName(), false);
     }
   }
 
   @Override
   protected void prePerform(TableName table) throws Exception {
-    super.prePerform(table);
     regions = admin.getTableRegions(table);
-    servers = admin.getClusterStatus().getServers().toArray(new ServerName[0]);
-    number_regions = (int) (regions.size() * ratio);
+    number_regions = (int) (regions.size() * ratio) / 2;
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
-    super.postPerform(table);
-    LOG.info("Finish moving " + number_regions + " of " + table + " in " + getDuration() + " seconds");
+    LOG.info("Merge is an async call, don't know when will finish");
   }
 
 }

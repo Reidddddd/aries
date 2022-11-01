@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-package org.apache.aries.action;
+package org.apache.aries.chaos.action;
 
 import org.apache.hadoop.hbase.TableName;
 
-public class FlushTable extends TableBase {
+public class TruncateTable extends TableBase {
 
-  public FlushTable() {}
+  public TruncateTable() {}
 
   @Override
   protected void perform(TableName table) throws Exception {
-    admin.flush(table);
+    admin.truncateTable(table, true);
   }
 
   @Override
   protected void prePerform(TableName table) throws Exception {
     super.prePerform(table);
-    LOG.info("Start flushing " + table);
+    LOG.info("Start truncating table " + table);
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
     super.postPerform(table);
-    LOG.info("Finish flushing " + table + " in " + getDuration() + " seconds");
+    LOG.info("Finish truncating table " + table + " in " + getDuration() + " seconds");
   }
 
 }

@@ -14,24 +14,29 @@
  * limitations under the License.
  */
 
+package org.apache.aries.chaos.action;
 
-package org.apache.aries.action;
+import org.apache.hadoop.hbase.TableName;
 
-import org.apache.aries.common.RETURN_CODE;
+public class FlushTable extends TableBase {
 
-public class ForceBalanceRegions extends Action {
-
-  public ForceBalanceRegions() {}
+  public FlushTable() {}
 
   @Override
-  public Integer call() throws Exception {
-    boolean ran = connection.getAdmin().balancer(true);
-    if (ran) {
-      LOG.info("Force balancer to run successfully");
-    } else {
-      LOG.warning("Unable to force balancer to run, please check master log for details");
-    }
-    return RETURN_CODE.SUCCESS.code();
+  protected void perform(TableName table) throws Exception {
+    admin.flush(table);
+  }
+
+  @Override
+  protected void prePerform(TableName table) throws Exception {
+    super.prePerform(table);
+    LOG.info("Start flushing " + table);
+  }
+
+  @Override
+  protected void postPerform(TableName table) throws Exception {
+    super.postPerform(table);
+    LOG.info("Finish flushing " + table + " in " + getDuration() + " seconds");
   }
 
 }

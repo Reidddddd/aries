@@ -14,25 +14,27 @@
  * limitations under the License.
  */
 
-package org.apache.aries;
+package org.apache.aries.chaos;
 
-import org.apache.aries.action.Action;
-import org.apache.aries.action.AlterBase;
-import org.apache.aries.action.BatchRestartRegionServer;
-import org.apache.aries.action.CompactRegionsOfTable;
-import org.apache.aries.action.FlushRegionsOfTable;
-import org.apache.aries.action.MergeRegionsOfTable;
-import org.apache.aries.action.MoveRegionsOfTable;
-import org.apache.aries.action.RestartBase;
-import org.apache.aries.action.RestartBase.Signal;
-import org.apache.aries.action.RestartDataNode;
-import org.apache.aries.action.RestartMaster;
-import org.apache.aries.action.RestartRegionServer;
-import org.apache.aries.action.RestartZookeeper;
-import org.apache.aries.action.RollingRestartRegionServer;
-import org.apache.aries.action.SplitRegionsOfTable;
-import org.apache.aries.action.TableBase;
-import org.apache.aries.action.UnbalanceRegions;
+import org.apache.aries.AbstractHBaseToy;
+import org.apache.aries.ToyConfiguration;
+import org.apache.aries.chaos.action.Action;
+import org.apache.aries.chaos.action.AlterBase;
+import org.apache.aries.chaos.action.BatchRestartRegionServer;
+import org.apache.aries.chaos.action.CompactRegionsOfTable;
+import org.apache.aries.chaos.action.FlushRegionsOfTable;
+import org.apache.aries.chaos.action.MergeRegionsOfTable;
+import org.apache.aries.chaos.action.MoveRegionsOfTable;
+import org.apache.aries.chaos.action.RestartBase;
+import org.apache.aries.chaos.action.RestartBase.Signal;
+import org.apache.aries.chaos.action.RestartDataNode;
+import org.apache.aries.chaos.action.RestartMaster;
+import org.apache.aries.chaos.action.RestartRegionServer;
+import org.apache.aries.chaos.action.RestartZookeeper;
+import org.apache.aries.chaos.action.RollingRestartRegionServer;
+import org.apache.aries.chaos.action.SplitRegionsOfTable;
+import org.apache.aries.chaos.action.TableBase;
+import org.apache.aries.chaos.action.UnbalanceRegions;
 import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.FloatParameter;
@@ -208,7 +210,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     semaphore = new Semaphore(concurrency.value());
     int i = 0;
     for (String chao : chaos.value()) {
-      Action action = (Action) Class.forName("org.apache.aries.action." + chao).newInstance();
+      Action action = (Action) Class.forName("org.apache.aries.chaos.action." + chao).newInstance();
       chaos_actions[i++] = action;
       action.init(hbase_conf, connection);
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.aries.action;
+package org.apache.aries.chaos.action;
 
 import org.apache.aries.RemoteSSH;
 import org.apache.aries.common.RETURN_CODE;
@@ -27,7 +27,6 @@ import org.apache.hadoop.hbase.client.Connection;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 public abstract class RestartBase extends Action {
 

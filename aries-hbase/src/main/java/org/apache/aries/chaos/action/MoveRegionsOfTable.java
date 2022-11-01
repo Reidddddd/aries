@@ -14,38 +14,43 @@
  * limitations under the License.
  */
 
-package org.apache.aries.action;
+package org.apache.aries.chaos.action;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
 import java.util.List;
 
-public class FlushRegionsOfTable extends FlushTable {
+public class MoveRegionsOfTable extends TableBase {
 
-  public final static String FLUSH_RATIO = "flush_table_regions.ratio";
+  public final static String MOVE_RATIO = "move_table_regions.ratio";
 
   private float ratio;
-  private List<HRegionInfo> regions;
   private int number_regions;
+  private List<HRegionInfo> regions;
+  private ServerName[] servers;
 
-  public FlushRegionsOfTable() {}
+  public MoveRegionsOfTable() {}
 
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
-    ratio = configuration.getFloat("cr." + FLUSH_RATIO, 0.2f);
+    ratio = configuration.getFloat("cr." + MOVE_RATIO, 0.2f);
   }
 
   @Override
   protected void perform(TableName table) throws Exception {
     for (int i = 0; i < number_regions; i++) {
       HRegionInfo picked = regions.get(RANDOM.nextInt(regions.size()));
-      LOG.info("Start flushing region " + picked.getRegionNameAsString() + " of " + table);
-      admin.flushRegion(picked.getRegionName());
+      ServerName server = servers[RANDOM.nextInt(servers.length)];
+
+      LOG.info("Moving region " + picked.getRegionNameAsString() + " of " + table + " to " + server);
+      admin.move(picked.getRegionName(), Bytes.toBytes(server.getServerName()));
     }
   }
 
@@ -53,13 +58,14 @@ public class FlushRegionsOfTable extends FlushTable {
   protected void prePerform(TableName table) throws Exception {
     super.prePerform(table);
     regions = admin.getTableRegions(table);
+    servers = admin.getClusterStatus().getServers().toArray(new ServerName[0]);
     number_regions = (int) (regions.size() * ratio);
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
     super.postPerform(table);
-    LOG.info("Finish flushing " + number_regions + " of " + table + " in " + getDuration() + " seconds");
+    LOG.info("Finish moving " + number_regions + " of " + table + " in " + getDuration() + " seconds");
   }
 
 }
