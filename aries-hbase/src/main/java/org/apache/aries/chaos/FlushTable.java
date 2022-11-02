@@ -14,27 +14,29 @@
  * limitations under the License.
  */
 
-package org.apache.aries.chaos.action;
+package org.apache.aries.chaos;
 
 import org.apache.hadoop.hbase.TableName;
 
-public class SplitTable extends TableBase {
+public class FlushTable extends TableBase {
 
-  public SplitTable() {}
+  public FlushTable() {}
 
   @Override
   protected void perform(TableName table) throws Exception {
-    LOG.info("Start splitting " + table);
-    admin.split(table);
+    admin.flush(table);
   }
 
   @Override
   protected void prePerform(TableName table) throws Exception {
+    super.prePerform(table);
+    LOG.info("Start flushing " + table);
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
-    LOG.info("Performed split (it is an async call, don't know when will finish)");
+    super.postPerform(table);
+    LOG.info("Finish flushing " + table + " in " + getDuration() + " seconds");
   }
 
 }

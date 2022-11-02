@@ -16,23 +16,23 @@
 
 package org.apache.aries;
 
-import org.apache.aries.chaos.action.Action;
-import org.apache.aries.chaos.action.AlterBase;
-import org.apache.aries.chaos.action.BatchRestartRegionServer;
-import org.apache.aries.chaos.action.CompactRegionsOfTable;
-import org.apache.aries.chaos.action.FlushRegionsOfTable;
-import org.apache.aries.chaos.action.MergeRegionsOfTable;
-import org.apache.aries.chaos.action.MoveRegionsOfTable;
-import org.apache.aries.chaos.action.RestartBase;
-import org.apache.aries.chaos.action.RestartBase.Signal;
-import org.apache.aries.chaos.action.RestartDataNode;
-import org.apache.aries.chaos.action.RestartMaster;
-import org.apache.aries.chaos.action.RestartRegionServer;
-import org.apache.aries.chaos.action.RestartZookeeper;
-import org.apache.aries.chaos.action.RollingRestartRegionServer;
-import org.apache.aries.chaos.action.SplitRegionsOfTable;
-import org.apache.aries.chaos.action.TableBase;
-import org.apache.aries.chaos.action.UnbalanceRegions;
+import org.apache.aries.chaos.Action;
+import org.apache.aries.chaos.AlterBase;
+import org.apache.aries.chaos.BatchRestartRegionServer;
+import org.apache.aries.chaos.CompactRegionsOfTable;
+import org.apache.aries.chaos.FlushRegionsOfTable;
+import org.apache.aries.chaos.MergeRegionsOfTable;
+import org.apache.aries.chaos.MoveRegionsOfTable;
+import org.apache.aries.chaos.RestartBase;
+import org.apache.aries.chaos.RestartBase.Signal;
+import org.apache.aries.chaos.RestartDataNode;
+import org.apache.aries.chaos.RestartMaster;
+import org.apache.aries.chaos.RestartRegionServer;
+import org.apache.aries.chaos.RestartZookeeper;
+import org.apache.aries.chaos.RollingRestartRegionServer;
+import org.apache.aries.chaos.SplitRegionsOfTable;
+import org.apache.aries.chaos.TableBase;
+import org.apache.aries.chaos.UnbalanceRegions;
 import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.FloatParameter;
@@ -208,7 +208,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     semaphore = new Semaphore(concurrency.value());
     int i = 0;
     for (String chao : chaos.value()) {
-      Action action = (Action) Class.forName("org.apache.aries.chaos.action." + chao).newInstance();
+      Action action = (Action) Class.forName("org.apache.aries.chaos." + chao).newInstance();
       chaos_actions[i++] = action;
       action.init(hbase_conf, connection);
     }

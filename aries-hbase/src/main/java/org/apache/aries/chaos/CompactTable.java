@@ -14,29 +14,36 @@
  * limitations under the License.
  */
 
-package org.apache.aries.chaos.action;
+package org.apache.aries.chaos;
 
 import org.apache.hadoop.hbase.TableName;
 
-public class TruncateTable extends TableBase {
+public class CompactTable extends TableBase {
 
-  public TruncateTable() {}
+  public CompactTable() {}
+
+  protected boolean major;
 
   @Override
   protected void perform(TableName table) throws Exception {
-    admin.truncateTable(table, true);
+    if (major) {
+      LOG.info("Major compacting " + table);
+      admin.majorCompact(table);
+    } else {
+      LOG.info("Compacting " + table);
+      admin.compact(table);
+    }
   }
 
   @Override
   protected void prePerform(TableName table) throws Exception {
-    super.prePerform(table);
-    LOG.info("Start truncating table " + table);
+    major = RANDOM.nextBoolean();
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
-    super.postPerform(table);
-    LOG.info("Finish truncating table " + table + " in " + getDuration() + " seconds");
+    String msg = major ? "major" : "normal";
+    LOG.info("Performed " + msg + " compaction (it is an async call, don't know when will finish)");
   }
 
 }

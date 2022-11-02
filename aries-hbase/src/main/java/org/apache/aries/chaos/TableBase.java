@@ -14,73 +14,67 @@
  * limitations under the License.
  */
 
-package org.apache.aries.chaos.action;
+package org.apache.aries.chaos;
 
 import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
 import java.util.Random;
 
-public abstract class AlterBase extends Action {
+public abstract class TableBase extends Action {
 
-  public final static String  TABLE_NAME = "alter_base_action.table.name";
-  public final static String FAMILY_NAME = "alter_base_action.family.name";
+  public final static String TABLE_NAME = "table_base_action.table.name";
+  public final static String   X_ROUNDS = "table_base_action.act.rounds";
+  public final static String SLEEP_SECS = "table_base_action.sleep.between.rounds";
 
   protected final Random RANDOM = new Random();
-  protected final byte[] EMPTY = Bytes.toBytes("");
 
   protected boolean random_pick = false;
+  protected int x_rounds;
+  protected int sleep_secs;
   protected TableName table;
   protected Admin admin;
   protected long start_time;
   protected long duration;
 
-  private byte[] family;
-
-  public AlterBase() {}
+  public TableBase() {}
 
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
                 admin = connection.getAdmin();
+             x_rounds = configuration.getInt("cr." + X_ROUNDS, 1);
+           sleep_secs = configuration.getInt("cr." + SLEEP_SECS, 1);
     String table_name = configuration.get("cr." + TABLE_NAME);
     if (table_name == null || table_name.isEmpty()) random_pick = true;
     else table = TableName.valueOf(table_name);
 
-    String family_name = configuration.get("cr." + FAMILY_NAME);
-    family = (family_name == null || family_name.isEmpty()) ? EMPTY : Bytes.toBytes(family_name);
   }
 
   @Override
   public final Integer call() throws Exception {
+    boolean first_round = true;
     try {
-      TableName picked;
-      if (random_pick) {
-        TableName[] tables = admin.listTableNames();
-        picked = tables[RANDOM.nextInt(tables.length)];
-      } else {
-        picked = table;
-      }
+      for (int i = 0; i < x_rounds; i++) {
+        if (first_round) first_round = false;
+        else Thread.sleep(ToyUtils.getTimeoutInMilliSeconds(sleep_secs));
 
-      HColumnDescriptor descriptor = Bytes.equals(family, EMPTY) ?
-          admin.getTableDescriptor(table).getColumnFamilies()[0] :
-          admin.getTableDescriptor(table).getFamily(family);
-      if (descriptor == null) {
-        // it means null == admin.getTableDescriptor(table).getFamily(family);
-        // means use configed wrong family name
-        descriptor = admin.getTableDescriptor(table).getColumnFamilies()[0];
+        TableName picked;
+        if (random_pick) {
+          TableName[] tables = admin.listTableNames();
+          picked = tables[RANDOM.nextInt(tables.length)];
+        } else {
+          picked = table;
+        }
+        prePerform(picked);
+        perform(picked);
+        postPerform(picked);
       }
-
-      preAlter(picked, descriptor);
-      alter(picked, descriptor);
-      postAlter(picked, descriptor);
     } catch (Throwable t) {
       LOG.warning(ToyUtils.buildError(t));
       return RETURN_CODE.FAILURE.code();
@@ -88,18 +82,17 @@ public abstract class AlterBase extends Action {
     return RETURN_CODE.SUCCESS.code();
   }
 
-  protected abstract void alter(TableName table, HColumnDescriptor family) throws Exception;
+  protected abstract void perform(TableName table) throws Exception;
 
-  protected void preAlter(TableName table, HColumnDescriptor family) throws Exception {
+  protected void prePerform(TableName table) throws Exception {
     start_time = System.currentTimeMillis();
   }
 
-  protected void postAlter(TableName table, HColumnDescriptor family) throws Exception {
+  protected void postPerform(TableName table) throws Exception {
     duration = System.currentTimeMillis() - start_time;
   }
 
   protected long getDuration() {
     return ToyUtils.getTimeoutInSeconds(duration);
   }
-
 }

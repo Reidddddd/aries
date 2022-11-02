@@ -14,37 +14,37 @@
  * limitations under the License.
  */
 
-package org.apache.aries.chaos.action;
+package org.apache.aries.chaos;
 
 import org.apache.aries.RemoteSSH;
 import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.ServerName;
+import org.apache.hadoop.hbase.client.ClusterConnection;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.util.Threads;
 
 import java.io.IOException;
 
-public class RestartZookeeper extends RestartBase {
+public class RestartMaster extends RestartBase {
 
-  public static final String                 ZK_START = "restart_zookeeper.start_command";
-  public static final String               ZK_TIMEOUT = "restart_zookeeper.status.check.timeout_in_seconds";
-  public static final String  ZK_CHECK_STATUS_COMMAND = "restart_zookeeper.check.status_command";
+  public static final String                 MS_START = "restart_master.start_command";
+  public static final String               MS_TIMEOUT = "restart_master.status.check.timeout_in_seconds";
+  public static final String MS_CHECK_STOPPED_COMMAND = "restart_master.check.stopped_command";
 
   private String start_cmd;
-  private String check_status_command;
+  private String check_stopped_command;
   private int timeout;
 
-  public RestartZookeeper() {}
+  public RestartMaster() {}
 
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
-             service_type = ServiceType.QuorumPeerMain;
-                start_cmd = configuration.get("cr." + ZK_START);
-     check_status_command = configuration.get("cr." + ZK_CHECK_STATUS_COMMAND);
-                  timeout = configuration.getInt("cr." + ZK_TIMEOUT, 0);
+             service_type = ServiceType.MASTER;
+                start_cmd = configuration.get("cr." + MS_START);
+    check_stopped_command = configuration.get("cr." + MS_CHECK_STOPPED_COMMAND);
+                  timeout = configuration.getInt("cr." + MS_TIMEOUT, 0);
   }
 
   @Override
@@ -58,15 +58,8 @@ public class RestartZookeeper extends RestartBase {
   }
 
   @Override
-  protected String findPidCommand(ServiceType service) {
-    return String.format("ps ux | grep %s | grep -v grep | tr -s ' ' | cut -d ' ' -f2", service.name());
-  }
-
-  @Override
   protected ServerName pickTargetServer() throws Exception {
-    String[] zks = connection.getConfiguration().getStrings(HConstants.ZOOKEEPER_QUORUM);
-    String zookeeper = zks[RANDOM.nextInt(zks.length)];
-    return ServerName.valueOf(zookeeper, -1, -1);
+    return admin.getClusterStatus().getMaster();
   }
 
   @Override
@@ -74,21 +67,13 @@ public class RestartZookeeper extends RestartBase {
     LOG.info("Waiting for " + service_type.service() + " to start on " + target_server.getHostname());
     long future = System.currentTimeMillis() + getTimeout();
 
-    RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
-    RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
-                                  .setCommand(check_status_command)
-                                  .setRemoteHost(target_server.getHostname())
-                                  .build();
     while (System.currentTimeMillis() < future) {
-      try {
-        remote_ssh.run();
-        if (remote_ssh.exitCode() == 0) {
-          // should be, just double check here
+      for (ServerName backup_master : admin.getClusterStatus().getBackupMasters()) {
+        if (backup_master.getHostname().equals(target_server.getHostname()) &&
+            backup_master.getPort() == target_server.getPort()) {
           LOG.info(service_type.service() + " on " + target_server.getHostname() + " is started");
+          return;
         }
-        return;
-      } catch (Exception ece) {
-        // ignore, keep waiting
       }
       Threads.sleep(sleepInterval());
     }
@@ -98,25 +83,49 @@ public class RestartZookeeper extends RestartBase {
   }
 
   protected void waitingStopped(ServerName target_server) throws IOException {
-    LOG.info("Waiting for " + service_type.service() + " to stop on " + target_server.getHostname());
     long future = System.currentTimeMillis() + getTimeout();
 
     RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
     RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
-                                  .setCommand(check_status_command)
+                                  .setCommand(check_stopped_command)
                                   .setRemoteHost(target_server.getHostname())
                                   .build();
+
     while (System.currentTimeMillis() < future) {
       try {
-        remote_ssh.run();
-      } catch (Exception ece) {
-        if (remote_ssh.exitCode() == 0) continue;
-        LOG.info(service_type.service() + " on " + target_server.getHostname() + " is stopped");
-        return;
+        ((ClusterConnection)this.connection).getMaster();
+        try {
+          if (admin.getClusterStatus().getMaster().equals(target_server)) {
+            // double check
+            throw new IOException("Master hasn't switched yet");
+          }
+        } catch (Exception e) {
+          throw new IOException(e);
+        }
+        LOG.info("Master switched successfully");
+
+        // master switch, check process killed clean
+        LOG.info("Waiting for " + service_type.service() + " to stop on " + target_server.getHostname());
+        while (System.currentTimeMillis() < future) {
+          try {
+            remote_ssh.run();
+          } catch (Exception ece) {
+            if (remote_ssh.exitCode() == 0) continue;
+            LOG.info(service_type.service() + " on " + target_server.getHostname() + " is stopped");
+            return;
+          }
+          Threads.sleep(sleepInterval());
+        }
+        String err = "Timeout waiting for " + service_type.service() + " to stop on " + target_server.getHostname();
+        LOG.warning(err);
+        throw new IOException(err);
+
+      } catch (IOException m) {
+        LOG.warning(m.getMessage());
       }
       Threads.sleep(sleepInterval());
     }
-    String err = "Timeout waiting for " + service_type.service() + " to stop on " + target_server.getHostname();
+    String err = "Timeout waiting for active master switched";
     LOG.warning(err);
     throw new IOException(err);
   }

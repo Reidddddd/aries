@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.aries.chaos.action;
+package org.apache.aries.chaos;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.TableName;
@@ -39,12 +39,12 @@ public class AlterBloomFilter extends AlterBase {
   protected void preAlter(TableName table, HColumnDescriptor family) throws Exception {
     super.preAlter(table, family);
     bloom = family.getBloomFilterType();
-    LOG.info("Current bloom filter of " + table + " is " + bloom);
+    LOG.info(preLogMessage("bloom filter", table, family, bloom));
   }
 
   protected void postAlter(TableName table, HColumnDescriptor family) throws Exception {
     super.postAlter(table, family);
-    LOG.info("Finish altering bloom filter of " + table + " to " + bloom + " in " + getDuration() + " seconds");
+    LOG.info(postLogMessage("bloom filter", table, family, bloom));
   }
 
 }

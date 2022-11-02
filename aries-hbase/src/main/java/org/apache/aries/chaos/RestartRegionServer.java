@@ -14,40 +14,37 @@
  * limitations under the License.
  */
 
-package org.apache.aries.chaos.action;
+package org.apache.aries.chaos;
 
+import org.apache.aries.RemoteSSH;
 import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.util.Threads;
-import org.apache.hadoop.hdfs.DFSClient;
-import org.apache.hadoop.hdfs.DistributedFileSystem;
-import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
-import org.apache.hadoop.hdfs.protocol.HdfsConstants;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 
-public class RestartDataNode extends RestartBase {
+public class RestartRegionServer extends RestartBase {
 
-  public static final String          DN_START = "restart_datanode.start_command";
-  public static final String DN_STATUS_TIMEOUT = "restart_datanode.status.check.timeout_in_seconds";
+  public static final String                 RS_START = "restart_regionserver.start_command";
+  public static final String        RS_STATUS_TIMEOUT = "restart_regionserver.status.check.timeout_in_seconds";
+  public static final String RS_CHECK_STOPPED_COMMAND = "restart_regionserver.check.stopped_command";
 
   private String start_cmd;
+  private String check_stopped_command;
   private int timeout;
-  private DistributedFileSystem file_system = new DistributedFileSystem();
 
-  public RestartDataNode() {}
+  public RestartRegionServer() {}
 
   @Override
   public void init(Configuration configuration, Connection connection) throws IOException {
     super.init(configuration, connection);
-             service_type = ServiceType.DATANODE;
-                start_cmd = configuration.get("cr." + DN_START);
-                  timeout = configuration.getInt("cr." + DN_STATUS_TIMEOUT, 0);
+             service_type = ServiceType.REGIONSERVER;
+                start_cmd = configuration.get("cr." + RS_START);
+    check_stopped_command = configuration.get("cr." + RS_CHECK_STOPPED_COMMAND);
+                  timeout = configuration.getInt("cr." + RS_STATUS_TIMEOUT, 0);
   }
 
   @Override
@@ -62,14 +59,10 @@ public class RestartDataNode extends RestartBase {
 
   @Override
   protected ServerName pickTargetServer() throws Exception {
-    Configuration conf = connection.getConfiguration();
-    file_system.initialize(FileSystem.getDefaultUri(conf), conf);
-    DFSClient dfs_client = file_system.getClient();
-    List<ServerName> servers = new LinkedList<>();
-    for (DatanodeInfo dataNode: dfs_client.datanodeReport(HdfsConstants.DatanodeReportType.LIVE)) {
-      servers.add(ServerName.valueOf(dataNode.getHostName(), dataNode.getIpcPort(), -1));
-    }
-    return servers.get(RANDOM.nextInt(servers.size()));
+    ClusterStatus status = admin.getClusterStatus();
+    ServerName[] servers = status.getServers().toArray(new ServerName[0]);
+
+    return servers[RANDOM.nextInt(servers.length)];
   }
 
   @Override
@@ -78,11 +71,10 @@ public class RestartDataNode extends RestartBase {
     long future = System.currentTimeMillis() + getTimeout();
 
     while (System.currentTimeMillis() < future) {
-      DFSClient dfs_client = file_system.getClient();
-      for (DatanodeInfo dataNode: dfs_client.datanodeReport(HdfsConstants.DatanodeReportType.LIVE)) {
-        if (dataNode.getHostName().equals(target_server.getHostname()) &&
-            dataNode.getIpcPort() == target_server.getPort()) {
-          LOG.info(service_type.service() + " on " + target_server.getHostname() + " is started");
+      for (ServerName server : admin.getClusterStatus().getServers()) {
+        if (server.getHostname().equals(target_server.getHostname()) &&
+            server.getPort() == target_server.getPort()) {
+          LOG.info(service_type.service() + " on " + server.getHostname() + " is started");
           return;
         }
       }
@@ -97,14 +89,18 @@ public class RestartDataNode extends RestartBase {
     LOG.info("Waiting for " + service_type.service() + " to stop on " + target_server.getHostname());
     long future = System.currentTimeMillis() + getTimeout();
 
+    RemoteSSH.RemoteSSHBuilder builder = RemoteSSH.RemoteSSHBuilder.newBuilder();
+    RemoteSSH remote_ssh = builder.setExePath(remote_ssh_exe_path)
+                                  .setCommand(check_stopped_command)
+                                  .setRemoteHost(target_server.getHostname())
+                                  .build();
     while (System.currentTimeMillis() < future) {
-      DFSClient dfs_client = file_system.getClient();
-      for (DatanodeInfo dataNode: dfs_client.datanodeReport(HdfsConstants.DatanodeReportType.DEAD)) {
-        if (dataNode.getHostName().equals(target_server.getHostname()) &&
-            dataNode.getIpcPort() == target_server.getPort()) {
-          LOG.info(service_type.service() + " on " + target_server.getHostname() + " is stopped");
-          return;
-        }
+      try {
+        remote_ssh.run();
+      } catch (Exception ece) {
+        if (remote_ssh.exitCode() == 0) continue;
+        LOG.info(service_type.service() + " on " + target_server.getHostname() + " is stopped");
+        return;
       }
       Threads.sleep(sleepInterval());
     }

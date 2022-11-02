@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.aries.chaos.action;
+package org.apache.aries.chaos;
 
 import org.apache.aries.RemoteSSH;
 import org.apache.aries.common.RETURN_CODE;

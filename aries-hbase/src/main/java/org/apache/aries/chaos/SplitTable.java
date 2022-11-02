@@ -14,36 +14,27 @@
  * limitations under the License.
  */
 
-package org.apache.aries.chaos.action;
+package org.apache.aries.chaos;
 
 import org.apache.hadoop.hbase.TableName;
 
-public class CompactTable extends TableBase {
+public class SplitTable extends TableBase {
 
-  public CompactTable() {}
-
-  protected boolean major;
+  public SplitTable() {}
 
   @Override
   protected void perform(TableName table) throws Exception {
-    if (major) {
-      LOG.info("Major compacting " + table);
-      admin.majorCompact(table);
-    } else {
-      LOG.info("Compacting " + table);
-      admin.compact(table);
-    }
+    LOG.info("Start splitting " + table);
+    admin.split(table);
   }
 
   @Override
   protected void prePerform(TableName table) throws Exception {
-    major = RANDOM.nextBoolean();
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
-    String msg = major ? "major" : "normal";
-    LOG.info("Performed " + msg + " compaction (it is an async call, don't know when will finish)");
+    LOG.info("Performed split (it is an async call, don't know when will finish)");
   }
 
 }
