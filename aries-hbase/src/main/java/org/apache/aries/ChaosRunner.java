@@ -55,7 +55,7 @@ import java.util.concurrent.TimeUnit;
 public class ChaosRunner extends AbstractHBaseToy {
 
   private final Parameter<Integer> concurrency =
-      IntParameter.newBuilder("cr.concurrency").setDefaultValue(1)
+      IntParameter.newBuilder("cr.concurrency").setDefaultValue(1).setRequired()
                   .setDescription("Number of chaos running simultaneously, 1 by default")
                   .opt();
   private final Parameter<String[]> chaos =
@@ -66,6 +66,11 @@ public class ChaosRunner extends AbstractHBaseToy {
       IntParameter.newBuilder("cr.running_time")
                   .setDescription("How long this application run (in seconds), -1 means run forever unless user kills it")
                   .opt();
+  private final Parameter<String> policy =
+      StringParameter.newBuilder("cr.action_policy").setDefaultValue("RANDOM").setRequired()
+                     .addConstraint(p -> p.equals("RANDOM") || p.equals("SEQUENCE"))
+                     .setDescription("Mode for action execution: RANDOM or SEQUENCE. RANDOM will execute the listed actions randomly," +
+                         " while SEQUENCE will execute the actions as the order written. RANDOM by default").opt();
   // RestartBase
   public final Parameter<String> local_exe_path =
       StringParameter.newBuilder(getParameterPrefix() + "." + RestartBase.REMOTE_SSH_EXE_PATH)
@@ -195,10 +200,10 @@ public class ChaosRunner extends AbstractHBaseToy {
 
 
   private final Random random = new Random();
-  private final int ERROR = 1;
+  private final ExecutorService exe = Executors.newCachedThreadPool();
 
-  private ExecutorService exe = Executors.newCachedThreadPool();
   private Action[] chaos_actions;
+  private ActionPolicy action_policy;
   private Semaphore semaphore;
 
   @Override
@@ -212,6 +217,7 @@ public class ChaosRunner extends AbstractHBaseToy {
       chaos_actions[i++] = action;
       action.init(hbase_conf, connection);
     }
+    action_policy = policy.value().equals("RANDOM") ? new RandomPick() : new SequencePick();
   }
 
   @Override
@@ -224,6 +230,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(concurrency);
     requisites.add(chaos);
     requisites.add(running_time);
+    requisites.add(policy);
 
     // Restart base
     requisites.add(local_exe_path);
@@ -278,6 +285,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(concurrency.key(), "1");
     example(chaos.key(), "1");
     example(running_time.key(), "6000");
+    example(policy.key(), "RANDOM");
 
     // Restart base
     example(local_exe_path.key(), "/home/util/remote-ssh");
@@ -327,6 +335,27 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(unbalance_region_ratio.key(), "0.2");
   }
 
+  interface ActionPolicy {
+    Action pickOneAction(Action[] actions);
+  }
+
+  class RandomPick implements ActionPolicy {
+    @Override
+    public Action pickOneAction(Action[] actions) {
+      return actions[random.nextInt(actions.length)];
+    }
+  }
+
+  class SequencePick implements ActionPolicy {
+    private int last_pick = 0;
+
+    @Override
+    public Action pickOneAction(Action[] actions) {
+      if (last_pick == actions.length) return null;
+      return actions[last_pick++];
+    }
+  }
+
   @Override
   protected int haveFun() throws Exception {
     boolean timer = running_time.value() != -1;
@@ -338,9 +367,10 @@ public class ChaosRunner extends AbstractHBaseToy {
 
     while (!timer || System.currentTimeMillis() < future) {
       while (semaphore.availablePermits() > 0) {
-        int i = random.nextInt(chaos_actions.length);
         semaphore.acquire(1);
-        Future<Integer> res = exe.submit(chaos_actions[i]);
+        Action action = action_policy.pickOneAction(chaos_actions);
+        if (action == null) break;
+        Future<Integer> res = exe.submit(action);
         futures.add(res);
       }
 
@@ -351,7 +381,7 @@ public class ChaosRunner extends AbstractHBaseToy {
         if (f.isDone()) {
           semaphore.release(1);
           it.remove();
-          if (f.get() == ERROR) {
+          if (f.get() == RETURN_CODE.FAILURE.code()) {
             LOG.warning("Exiting...");
             return RETURN_CODE.FAILURE.code();
           }
@@ -368,7 +398,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     }
 
     for (Future<Integer> remaining : futures) {
-      if (remaining.get() == ERROR) {
+      if (remaining.get() == RETURN_CODE.FAILURE.code()) {
         LOG.warning("Exiting...");
         return RETURN_CODE.FAILURE.code();
       }
