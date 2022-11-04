@@ -38,7 +38,7 @@ public class AlterPrefetchBlocksOnOpen extends AlterBase {
 
   protected void postAlter(TableName table, HColumnDescriptor family) throws Exception {
     super.postAlter(table, family);
-    LOG.info(postLogMessage("prefetch block", table, family, prefetch));
+    LOG.info(postLogMessage("prefetch block", table, family, !prefetch));
   }
 
 }
