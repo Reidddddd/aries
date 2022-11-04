@@ -365,11 +365,12 @@ public class ChaosRunner extends AbstractHBaseToy {
     List<Future<Integer>> futures = new LinkedList<>();
 
 
+    main:
     while (!timer || System.currentTimeMillis() < future) {
       while (semaphore.availablePermits() > 0) {
         semaphore.acquire(1);
         Action action = action_policy.pickOneAction(chaos_actions);
-        if (action == null) return RETURN_CODE.SUCCESS.code();
+        if (action == null) break main;
         Future<Integer> res = exe.submit(action);
         futures.add(res);
       }

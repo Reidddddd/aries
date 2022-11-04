@@ -30,13 +30,14 @@ public class AlterDurablity extends AlterBase {
 
   protected void alter(TableName table, HColumnDescriptor family) throws Exception {
     while (true) {
-      int index = RANDOM.nextInt(4);
+      int index = RANDOM.nextInt(5);
       Durability new_durability;
       switch (index) {
          case 0: new_durability = Durability.ASYNC_WAL;   break;
          case 1: new_durability = Durability.FSYNC_WAL;   break;
          case 2: new_durability = Durability.SYNC_WAL;    break;
          case 3: new_durability = Durability.SKIP_WAL;    break;
+         case 4: new_durability = Durability.USE_DEFAULT; break;
         default: new_durability = Durability.USE_DEFAULT; break;
       }
       if (new_durability == durability) {
