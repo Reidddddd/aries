@@ -70,12 +70,12 @@ public abstract class AlterBase extends Action {
       }
 
       HColumnDescriptor descriptor = Bytes.equals(family, EMPTY) ?
-          admin.getTableDescriptor(table).getColumnFamilies()[0] :
-          admin.getTableDescriptor(table).getFamily(family);
+          admin.getTableDescriptor(picked).getColumnFamilies()[0] :
+          admin.getTableDescriptor(picked).getFamily(family);
       if (descriptor == null) {
         // it means null == admin.getTableDescriptor(table).getFamily(family);
         // means use configed wrong family name
-        descriptor = admin.getTableDescriptor(table).getColumnFamilies()[0];
+        descriptor = admin.getTableDescriptor(picked).getColumnFamilies()[0];
       }
 
       preAlter(picked, descriptor);
