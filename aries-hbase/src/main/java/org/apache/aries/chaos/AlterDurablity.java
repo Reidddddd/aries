@@ -29,8 +29,8 @@ public class AlterDurablity extends AlterBase {
   public AlterDurablity() {}
 
   protected void alter(TableName table, HColumnDescriptor family) throws Exception {
-    int index = RANDOM.nextInt(4);
     while (true) {
+      int index = RANDOM.nextInt(4);
       Durability new_durability;
       switch (index) {
          case 0: new_durability = Durability.ASYNC_WAL;   break;

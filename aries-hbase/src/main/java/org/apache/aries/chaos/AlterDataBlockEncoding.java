@@ -27,8 +27,8 @@ public class AlterDataBlockEncoding extends AlterBase {
   public AlterDataBlockEncoding() {}
 
   protected void alter(TableName table, HColumnDescriptor family) throws Exception {
-    int index = RANDOM.nextInt(5);
     while (true) {
+      int index = RANDOM.nextInt(5);
       DataBlockEncoding new_encode;
       switch (index) {
          case 0: new_encode = DataBlockEncoding.NONE;         break;

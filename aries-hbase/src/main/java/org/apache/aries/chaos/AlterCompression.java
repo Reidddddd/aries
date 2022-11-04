@@ -27,8 +27,8 @@ public class AlterCompression extends AlterBase {
   public AlterCompression() {}
 
   protected void alter(TableName table, HColumnDescriptor family) throws Exception {
-    int index = RANDOM.nextInt(7);
     while (true) {
+      int index = RANDOM.nextInt(7);
       Algorithm new_algo;
       switch (index) {
          case 0: new_algo = Algorithm.NONE;   break;
