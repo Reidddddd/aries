@@ -31,11 +31,15 @@ public class TruncateTable extends TableBase {
   protected void prePerform(TableName table) throws Exception {
     super.prePerform(table);
     LOG.info("Start truncating table " + table);
+    if (!admin.isTableDisabled(table)) {
+      admin.disableTable(table);
+    }
   }
 
   @Override
   protected void postPerform(TableName table) throws Exception {
     super.postPerform(table);
+    admin.enableTable(table);
     LOG.info("Finish truncating table " + table + " in " + getDuration() + " seconds");
   }
 
