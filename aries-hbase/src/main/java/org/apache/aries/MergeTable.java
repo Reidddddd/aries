@@ -17,6 +17,7 @@
 package org.apache.aries;
 
 import org.apache.aries.common.Constants;
+import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.RETURN_CODE;
@@ -26,10 +27,10 @@ import org.apache.aries.common.TableInfo;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +54,10 @@ public class MergeTable extends AbstractHBaseToy {
   private final Parameter<Integer> merge_rreq_threshold =
       IntParameter.newBuilder("mt.merge_threshold_readrequest").setDefaultValue(0)
                   .setDescription("Regions read request under this threshold will be merged.").opt();
+  private final Parameter<Enum> condition_logic =
+      EnumParameter.newBuilder("mt.condition_logic", LOGIC.OR, LOGIC.class)
+                   .setDescription("Condition logic, either AND or OR. If AND, two regions should satisfy both, OR is either. OR by default").opt();
+
 
   @Override
   protected void requisite(List<Parameter> requisites) {
@@ -61,6 +66,7 @@ public class MergeTable extends AbstractHBaseToy {
     requisites.add(merge_size_threshold);
     requisites.add(merge_rreq_threshold);
     requisites.add(runs_interval_sec);
+    requisites.add(condition_logic);
   }
 
   @Override
@@ -70,12 +76,14 @@ public class MergeTable extends AbstractHBaseToy {
     example(merge_size_threshold.key(), "100");
     example(merge_rreq_threshold.key(), "0");
     example(runs_interval_sec.key(), "500");
+    example(runs_interval_sec.key(), "OR");
   }
 
   Admin admin;
   TableName table;
   long threshold_bytes;
   int read_requests;
+  LOGIC logic;
   int round = Constants.UNSET_INT;
 
   final Conditions conditions = new Conditions();
@@ -88,6 +96,7 @@ public class MergeTable extends AbstractHBaseToy {
     admin = connection.getAdmin();
     int start = merge_table_url.value().indexOf("=") + 1;
     table = TableName.valueOf(merge_table_url.value().substring(start));
+    logic = (LOGIC) condition_logic.value();
 
     String type = merge_condition.value();
     if (type.equalsIgnoreCase("size")) {
@@ -123,10 +132,10 @@ public class MergeTable extends AbstractHBaseToy {
         }
         RegionInfo region_A = table_info.getRegionAtIndex(index_a);
         RegionInfo region_B = table_info.getRegionAtIndex(index_b);
-        if (conditions.shouldMerge(region_A, region_B)) {
+        if (conditions.shouldMerge(logic, region_A, region_B)) {
           HRegionInfo A_region = regions.get(index_a);
           HRegionInfo B_region = regions.get(index_b);
-          LOG.info("Merging region " + A_region.getRegionId() + " and " + B_region.getRegionId());
+          LOG.info("Merging region " + Bytes.toStringBinary(A_region.getEncodedNameAsBytes()) + " and " + Bytes.toStringBinary(B_region.getEncodedNameAsBytes()));
           admin.mergeRegions(
               A_region.getEncodedNameAsBytes(),
               B_region.getEncodedNameAsBytes(),
@@ -145,7 +154,7 @@ public class MergeTable extends AbstractHBaseToy {
       qualified_for_merge += conditions.shouldMerge(region) ? 1 : 0;
     }
     int result = (int) (Math.log(qualified_for_merge) / Math.log(2));
-    LOG.info("There will be " + result + " runs");
+    LOG.info("There will be approximate " + result + " runs");
     return result;
   }
 
@@ -163,6 +172,10 @@ public class MergeTable extends AbstractHBaseToy {
     boolean shouldMerge(RegionInfo region);
   }
 
+  enum LOGIC {
+    AND, OR
+  }
+
   class Conditions {
     List<MergeCondition> conditions = new ArrayList<>();
 
@@ -170,10 +183,21 @@ public class MergeTable extends AbstractHBaseToy {
       conditions.add(condition);
     }
 
-    public boolean shouldMerge(RegionInfo region_A, RegionInfo region_B) {
+    public boolean shouldMerge(LOGIC logic, RegionInfo region_A, RegionInfo region_B) {
       for (MergeCondition condition : conditions) {
-        if (condition.shouldMerge(region_A) || condition.shouldMerge(region_B)) {
-          return true;
+        switch (logic) {
+          case  OR: {
+            if (condition.shouldMerge(region_A) || condition.shouldMerge(region_B)) {
+              return true;
+            }
+            break;
+          }
+          case AND: {
+            if (condition.shouldMerge(region_A) && condition.shouldMerge(region_B)) {
+              return true;
+            }
+            break;
+          }
         }
       }
       return false;
