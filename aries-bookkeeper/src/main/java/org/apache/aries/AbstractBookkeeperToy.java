@@ -15,6 +15,35 @@
  */
 package org.apache.aries;
 
-public abstract class AbstractBookkeeperToy extends AbstractToy {
+import java.util.List;
 
+import org.apache.aries.common.Parameter;
+import org.apache.aries.common.StringParameter;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+
+public abstract class AbstractBookkeeperToy extends AbstractToy {
+  protected final Parameter<String> zkServers = StringParameter.newBuilder("bk.zk.servers")
+      .setRequired()
+      .setDescription("zkServers where the bk cluster located.")
+      .opt();
+  protected final Parameter<String> ledgerPath = StringParameter.newBuilder("bk.ledgers.path")
+      .setRequired()
+      .setDescription("ZK node where store the meta data of ledgers.")
+      .opt();
+
+  protected BookKeeperAdmin bookKeeperAdmin;
+  protected BookKeeper bookKeeperClient;
+
+  @Override
+  protected void buildToy(ToyConfiguration configuration) throws Exception {
+    bookKeeperAdmin = new BookKeeperAdmin(zkServers.value());
+    bookKeeperClient = new BookKeeper(zkServers.value());
+  }
+
+  @Override
+  protected void requisite(List<Parameter> requisites) {
+    requisites.add(zkServers);
+    requisites.add(ledgerPath);
+  }
 }

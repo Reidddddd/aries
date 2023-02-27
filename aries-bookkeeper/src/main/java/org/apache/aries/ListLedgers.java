@@ -22,28 +22,16 @@ import java.util.List;
 
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.StringParameter;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.bouncycastle.util.Strings;
 
 public class ListLedgers extends AbstractBookkeeperToy {
   private static final String templateStr = "LedgerId: %d, Size: %d";
 
-  protected final Parameter<String> zkServers = StringParameter.newBuilder("bk.zk.servers")
-      .setDefaultValue("localhost:2181")
-      .setDescription("zkServers where the bk cluster located.")
-      .opt();
-  protected final Parameter<String> ledgerPath = StringParameter.newBuilder("bk.ledgers.path")
-      .setDefaultValue("/ledgers")
-      .setDescription("ZK node where store the meta data of ledgers.")
-      .opt();
   protected final Parameter<String> ledgers = StringParameter.newBuilder("bk.ledgers")
       .setDefaultValue("")
       .setDescription("The specific ledgers you want to list, separated with ,")
       .opt();
 
-  protected BookKeeperAdmin bookKeeperAdmin;
-  protected BookKeeper bookKeeperClient;
   protected List<Long> ledgerList;
 
   @Override
@@ -53,8 +41,7 @@ public class ListLedgers extends AbstractBookkeeperToy {
 
   @Override
   protected void requisite(List<Parameter> requisites) {
-    requisites.add(zkServers);
-    requisites.add(ledgerPath);
+    super.requisite(requisites);
     requisites.add(ledgers);
   }
 
@@ -67,8 +54,7 @@ public class ListLedgers extends AbstractBookkeeperToy {
 
   @Override
   protected void buildToy(ToyConfiguration configuration) throws Exception {
-    bookKeeperAdmin = new BookKeeperAdmin(zkServers.value());
-    bookKeeperClient = new BookKeeper(zkServers.value());
+    super.buildToy(configuration);
     ledgerList = new ArrayList<>();
     String[] ids = Strings.split(ledgers.value(), ',');
     Arrays.stream(ids).forEach(id -> {
