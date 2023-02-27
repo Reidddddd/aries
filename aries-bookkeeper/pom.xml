@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>aries</artifactId>
+        <groupId>org.rc</groupId>
+        <version>0.4</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>aries-bookkeeper</artifactId>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <bookkeeper.version>4.15.3</bookkeeper.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.rc</groupId>
+            <artifactId>aries-common</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.bookkeeper</groupId>
+            <artifactId>bookkeeper-server</artifactId>
+            <version>${bookkeeper.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.distributedlog</groupId>
+            <artifactId>distributedlog-core</artifactId>
+            <version>${bookkeeper.version}</version>
+        </dependency>
+    </dependencies>
+
+</project>
