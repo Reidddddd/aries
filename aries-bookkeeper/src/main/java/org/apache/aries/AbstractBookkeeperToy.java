@@ -46,4 +46,10 @@ public abstract class AbstractBookkeeperToy extends AbstractToy {
     requisites.add(zkServers);
     requisites.add(ledgerPath);
   }
+
+  @Override
+  protected void destroyToy() throws Exception {
+    bookKeeperAdmin.close();
+    bookKeeperClient.close();
+  }
 }

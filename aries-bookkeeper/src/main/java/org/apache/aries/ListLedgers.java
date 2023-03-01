@@ -78,10 +78,4 @@ public class ListLedgers extends AbstractBookkeeperToy {
     LOG.info("The ledgers total size: " + sum);
     return 0;
   }
-
-  @Override
-  protected void destroyToy() throws Exception {
-    bookKeeperAdmin.close();
-    bookKeeperClient.close();
-  }
 }
