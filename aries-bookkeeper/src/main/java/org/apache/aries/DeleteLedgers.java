@@ -15,6 +15,11 @@
  */
 package org.apache.aries;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.StringParameter;
@@ -30,6 +35,8 @@ public class DeleteLedgers extends AbstractBookkeeperToy {
       .setDescription("Whether delete the ledgers in the given range.")
       .opt();
 
+  protected List<Long> candidateLedgers;
+
   @Override
   protected String getParameterPrefix() {
     return "bkdl";
@@ -42,24 +49,44 @@ public class DeleteLedgers extends AbstractBookkeeperToy {
   }
 
   @Override
+  protected void buildToy(ToyConfiguration configuration) throws Exception {
+    super.buildToy(configuration);
+    candidateLedgers = new ArrayList<>();
+    Arrays.stream(deleteLedgers.value().split(",")).collect(Collectors.toList()).forEach(
+        id -> candidateLedgers.add(Long.parseLong(id))
+    );
+  }
+
+  @Override
   protected int haveFun() throws Exception {
-    String[] ledgerStrs = deleteLedgers.value().split(",");
     if (deleteRange.value()) {
-      if (ledgerStrs.length != 2) {
+      if (candidateLedgers.size() != 2) {
         throw new IllegalArgumentException("Delete ledgers must be two when using range delete.");
       }
-      long bottom = Long.parseLong(ledgerStrs[0]);
-      long up = Long.parseLong(ledgerStrs[1]);
+      long bottom = candidateLedgers.get(0);
+      long up = candidateLedgers.get(1);
       for (long i = bottom; i < up; i++) {
         deleteOneLedger(i);
       }
     } else {
-      for (String ledger : ledgerStrs) {
-        long id = Long.parseLong(ledger);
+      for (long id : candidateLedgers) {
         deleteOneLedger(id);
       }
     }
     return 0;
+  }
+
+  @Override
+  protected void requisite(List<Parameter> requisites) {
+    super.requisite(requisites);
+    requisites.add(deleteLedgers);
+    requisites.add(deleteRange);
+  }
+
+  @Override
+  protected void destroyToy() throws Exception {
+    super.destroyToy();
+    candidateLedgers = null;
   }
 
   private void deleteOneLedger(long ledgerId) throws BKException, InterruptedException {
