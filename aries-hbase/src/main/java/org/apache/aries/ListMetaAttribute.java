@@ -47,7 +47,7 @@ public class ListMetaAttribute extends AbstractHBaseToy {
   @Override
   protected void exampleConfiguration() {
     example(output_file.key(), "result.out");
-    example(attribute.key(), "PROJECT, TEAM");
+    example(attribute.key(), "PROJECT");
   }
 
   @Override
