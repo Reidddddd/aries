@@ -71,6 +71,13 @@ public class ChaosRunner extends AbstractHBaseToy {
                      .addConstraint(p -> p.equals("RANDOM") || p.equals("SEQUENCE"))
                      .setDescription("Mode for action execution: RANDOM or SEQUENCE. RANDOM will execute the listed actions randomly," +
                          " while SEQUENCE will execute the actions as the order written. RANDOM by default").opt();
+
+  private final Parameter<Boolean> ignore_failure =
+      BoolParameter.newBuilder("cr.ignore.failure.if_action_faied", false)
+          .setDescription("If set true, when a chaos action fails with some reasons, it will continue next chaos action," +
+              "            by default false which means aborting the whole run")
+          .opt();
+
   // RestartBase
   public final Parameter<String> local_exe_path =
       StringParameter.newBuilder(getParameterPrefix() + "." + RestartBase.REMOTE_SSH_EXE_PATH)
@@ -231,6 +238,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     requisites.add(chaos);
     requisites.add(running_time);
     requisites.add(policy);
+    requisites.add(ignore_failure);
 
     // Restart base
     requisites.add(local_exe_path);
@@ -286,6 +294,7 @@ public class ChaosRunner extends AbstractHBaseToy {
     example(chaos.key(), "1");
     example(running_time.key(), "6000");
     example(policy.key(), "RANDOM");
+    example(ignore_failure.key(), "false");
 
     // Restart base
     example(local_exe_path.key(), "/home/util/remote-ssh");
@@ -383,6 +392,10 @@ public class ChaosRunner extends AbstractHBaseToy {
           semaphore.release(1);
           it.remove();
           if (f.get() == RETURN_CODE.FAILURE.code()) {
+            if (ignore_failure.value()) {
+              LOG.info("Ignore failure and run next chaos action");
+              continue;
+            }
             LOG.warning("Exiting...");
             return RETURN_CODE.FAILURE.code();
           }
