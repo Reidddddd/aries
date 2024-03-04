@@ -188,7 +188,7 @@ public class RegionsMover extends AbstractHBaseToy {
           LOG.info("Moved " + region.getEncodedName() + " to " + target.getServerName());
           moved.decrementAndGet();
         } catch (IOException e) {
-          LOG.info("Error in moving " + region.getEncodedName());
+          LOG.info("Error in moving " + region.getEncodedName() + ", " + e.getMessage());
         }
       });
     }
