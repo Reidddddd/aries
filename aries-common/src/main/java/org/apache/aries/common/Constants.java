@@ -42,6 +42,8 @@ public final class Constants {
 
   public static final long ONE_GB = ONE_MB * 1024;
 
+  public static final long ONE_TB = ONE_GB * 1024;
+
   public static final int DEFAULT_KEY_LENGTH_PW = 10;
 
 }

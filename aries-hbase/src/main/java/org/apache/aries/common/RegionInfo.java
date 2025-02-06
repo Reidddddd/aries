@@ -59,6 +59,9 @@ public class RegionInfo {
     } else if (file_size.contains("KB")) {
       float kb = Float.parseFloat(num);
       size = (long) (kb * Constants.ONE_KB);
+    } else if (file_size.contains("TB")) {
+      float tb = Float.parseFloat(num);
+      size = (long) (tb * Constants.ONE_TB);
     } else {
       size = Long.parseLong(num);
     }
