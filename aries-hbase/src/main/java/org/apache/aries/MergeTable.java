@@ -117,7 +117,7 @@ public class MergeTable extends AbstractHBaseToy {
   protected int haveFun() throws Exception {
     do {
       List<HRegionInfo> regions = admin.getTableRegions(table);
-      Document doc = Jsoup.connect(merge_table_url.value()).get();
+      Document doc = Jsoup.connect(merge_table_url.value()).maxBodySize(0).get();
       Element element = doc.getElementById("regionServerDetailsTable");
       TableInfo table_info = new TableInfo(element);
       if (round == Constants.UNSET_INT) {
