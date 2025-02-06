@@ -16,6 +16,7 @@
 
 package org.apache.aries;
 
+import org.apache.aries.common.BoolParameter;
 import org.apache.aries.common.Constants;
 import org.apache.aries.common.EnumParameter;
 import org.apache.aries.common.IntParameter;
@@ -57,7 +58,10 @@ public class MergeTable extends AbstractHBaseToy {
   private final Parameter<Enum> condition_logic =
       EnumParameter.newBuilder("mt.condition_logic", LOGIC.OR, LOGIC.class)
                    .setDescription("Condition logic, either AND or OR. If AND, two regions should satisfy both, OR is either. OR by default").opt();
-
+  protected final Parameter<Boolean> hbase_version2 =
+      BoolParameter.newBuilder("mt.hbase_version2", false)
+                   .setDescription("Whether the table is in hbase version2 cluster, false by default.")
+                   .opt();
 
   @Override
   protected void requisite(List<Parameter> requisites) {
@@ -67,6 +71,7 @@ public class MergeTable extends AbstractHBaseToy {
     requisites.add(merge_rreq_threshold);
     requisites.add(runs_interval_sec);
     requisites.add(condition_logic);
+    requisites.add(hbase_version2);
   }
 
   @Override
@@ -76,7 +81,8 @@ public class MergeTable extends AbstractHBaseToy {
     example(merge_size_threshold.key(), "100");
     example(merge_rreq_threshold.key(), "0");
     example(runs_interval_sec.key(), "500");
-    example(runs_interval_sec.key(), "OR");
+    example(condition_logic.key(), "OR");
+    example(hbase_version2.key(), "false");
   }
 
   Admin admin;
@@ -119,7 +125,7 @@ public class MergeTable extends AbstractHBaseToy {
       List<HRegionInfo> regions = admin.getTableRegions(table);
       Document doc = Jsoup.connect(merge_table_url.value()).maxBodySize(0).get();
       Element element = doc.getElementById("regionServerDetailsTable");
-      TableInfo table_info = new TableInfo(element);
+      TableInfo table_info = new TableInfo(element, hbase_version2.value());
       if (round == Constants.UNSET_INT) {
         // It is determined by first run.
         round = calculateHowManyRuns(table_info);

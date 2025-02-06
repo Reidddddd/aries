@@ -27,10 +27,15 @@ public class TableInfo {
   final List<RegionInfo> regions;
 
   public TableInfo(Element table) {
+    this(table, false);
+  }
+
+  public TableInfo(Element table, boolean v2) {
     Elements rows = table.select("tr");
     regions = new ArrayList<>(rows.size() - 1); // Skip first title row
     for (int i = 1; i < rows.size(); i++) {
-      regions.add(new RegionInfo(rows.get(i)));
+      regions.add(v2 ? new RegionInfoV2(rows.get(i))
+                     : new RegionInfo(rows.get(i)));
     }
   }
 

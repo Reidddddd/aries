@@ -20,22 +20,13 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 /**
- * It is based on hbase version 1
+ * V2 is based on hbase version 2
  */
-public class RegionInfo {
+public class RegionInfoV2 extends RegionInfo {
 
-  String name;
-  String server;
-  String read_requests;
-  String write_requests;
-  String file_size;
-  String file_num;
-  String mem_size;
-  String locality;
-  String start_key;
-  String end_key;
+  String state;
 
-  RegionInfo(Element region) {
+  RegionInfoV2(Element region) {
     Elements column = region.select("td");
     int i = 0;
     name           = column.get(i++).text();
@@ -45,43 +36,14 @@ public class RegionInfo {
     file_size      = column.get(i++).text();
     file_num       = column.get(i++).text();
     mem_size       = column.get(i++).text();
-    locality       = column.get(i++).text();
     start_key      = column.get(i++).text();
     end_key        = column.get(i++).text();
-  }
-
-  // Add an empty constructor to allow children class do not have to call super(Element)
-  protected RegionInfo() {
-  }
-
-  public long getSizeInBytes() {
-    long size;
-    String num = file_size.split(" ")[0];
-    if (file_size.contains("GB")) {
-      float gb = Float.parseFloat(num); // get the number
-      size = (long) (gb * Constants.ONE_GB);
-    } else if (file_size.contains("MB")) {
-      float mb = Float.parseFloat(num);
-      size = (long) (mb * Constants.ONE_MB);
-    } else if (file_size.contains("KB")) {
-      float kb = Float.parseFloat(num);
-      size = (long) (kb * Constants.ONE_KB);
-    } else if (file_size.contains("TB")) {
-      float tb = Float.parseFloat(num);
-      size = (long) (tb * Constants.ONE_TB);
-    } else {
-      size = Long.parseLong(num);
-    }
-    return size;
-  }
-
-  public int readRequests() {
-    return Integer.parseInt(read_requests.replaceAll(",", ""));
+    state          = column.get(i++).text();
   }
 
   @Override
   public String toString() {
-    return "RegionInfo{" +
+    return "RegionInfoV2{" +
         "name='" + name + '\'' +
         ", server='" + server + '\'' +
         ", read_requests='" + read_requests + '\'' +
@@ -89,9 +51,9 @@ public class RegionInfo {
         ", file_size='" + file_size + '\'' +
         ", file_num='" + file_num + '\'' +
         ", mem_size='" + mem_size + '\'' +
-        ", locality='" + locality + '\'' +
         ", start_key='" + start_key + '\'' +
         ", end_key='" + end_key + '\'' +
+        ", state='" + state + '\'' +
         '}';
   }
 
