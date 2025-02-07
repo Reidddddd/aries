@@ -34,6 +34,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -112,11 +113,11 @@ public class MergeTable extends AbstractHBaseToy {
   @Override
   protected void buildToy(ToyConfiguration configuration) throws Exception {
     super.buildToy(configuration);
+    URL tableURL = new URL(merge_table_url.value());
+    table = TableName.valueOf(tableURL.getQuery().split("&")[0].split("=")[1]);
     admin = connection.getAdmin();
     logic = (LOGIC) condition_logic.value();
      pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(thread_pool_size.value());
-    table = TableName.valueOf(merge_table_url.value().substring(merge_table_url.value().indexOf("=") + 1));
-
 
     String type = merge_condition.value();
     if (type.equalsIgnoreCase("size")) {
