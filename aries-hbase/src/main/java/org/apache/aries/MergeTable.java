@@ -36,8 +36,10 @@ import org.jsoup.nodes.Element;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("rawtypes")
@@ -101,7 +103,7 @@ public class MergeTable extends AbstractHBaseToy {
   int read_requests;
   LOGIC logic;
   int round = Constants.UNSET_INT;
-  ExecutorService pool;
+  ThreadPoolExecutor pool;
 
   final Conditions conditions = new Conditions();
   final MergeCondition size_condition = region -> region.getSizeInBytes() < threshold_bytes;
@@ -112,7 +114,7 @@ public class MergeTable extends AbstractHBaseToy {
     super.buildToy(configuration);
     admin = connection.getAdmin();
     logic = (LOGIC) condition_logic.value();
-     pool = Executors.newFixedThreadPool(thread_pool_size.value());
+     pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(thread_pool_size.value());
     table = TableName.valueOf(merge_table_url.value().substring(merge_table_url.value().indexOf("=") + 1));
 
 
@@ -164,8 +166,12 @@ public class MergeTable extends AbstractHBaseToy {
           });
         }
       }
-      LOG.info("Sleeping for " + runs_interval_sec.value() + " seconds to wait for CatalogJanitor cleaning merged regions.");
-      TimeUnit.SECONDS.sleep(runs_interval_sec.value());
+      BlockingQueue<Runnable> inQueue = pool.getQueue();
+      while (!inQueue.isEmpty()) {
+        LOG.info("Remaining " + inQueue.size() + " merging tasks");
+        LOG.info("Sleeping for " + runs_interval_sec.value() + " seconds to waiting.");
+        TimeUnit.SECONDS.sleep(runs_interval_sec.value());
+      }
     } while (--round != 0);
     return RETURN_CODE.SUCCESS.code();
   }
