@@ -160,7 +160,7 @@ public class MergeTable extends AbstractHBaseToy {
       qualified_for_merge += conditions.shouldMerge(region) ? 1 : 0;
     }
     int result = (int) (Math.log(qualified_for_merge) / Math.log(2));
-    LOG.info("There will be approximate " + result + " runs");
+    LOG.info("There are " + qualified_for_merge + " regions qualified for merge, and will be approximate " + result + " runs");
     return result;
   }
 
