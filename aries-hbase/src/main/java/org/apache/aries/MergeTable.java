@@ -33,8 +33,11 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("rawtypes")
@@ -58,10 +61,15 @@ public class MergeTable extends AbstractHBaseToy {
   private final Parameter<Enum> condition_logic =
       EnumParameter.newBuilder("mt.condition_logic", LOGIC.OR, LOGIC.class)
                    .setDescription("Condition logic, either AND or OR. If AND, two regions should satisfy both, OR is either. OR by default").opt();
-  protected final Parameter<Boolean> hbase_version2 =
+  private final Parameter<Boolean> hbase_version2 =
       BoolParameter.newBuilder("mt.hbase_version2", false)
                    .setDescription("Whether the table is in hbase version2 cluster, false by default.")
                    .opt();
+  private final Parameter<Integer> thread_pool_size =
+      IntParameter.newBuilder("mt.threads_for_merge_regions")
+                  .setDefaultValue(4)
+                  .setDescription("Number of threads for merging regions.")
+                  .opt();
 
   @Override
   protected void requisite(List<Parameter> requisites) {
@@ -72,6 +80,7 @@ public class MergeTable extends AbstractHBaseToy {
     requisites.add(runs_interval_sec);
     requisites.add(condition_logic);
     requisites.add(hbase_version2);
+    requisites.add(thread_pool_size);
   }
 
   @Override
@@ -83,6 +92,7 @@ public class MergeTable extends AbstractHBaseToy {
     example(runs_interval_sec.key(), "500");
     example(condition_logic.key(), "OR");
     example(hbase_version2.key(), "false");
+    example(thread_pool_size.key(), "3");
   }
 
   Admin admin;
@@ -91,6 +101,7 @@ public class MergeTable extends AbstractHBaseToy {
   int read_requests;
   LOGIC logic;
   int round = Constants.UNSET_INT;
+  ExecutorService pool;
 
   final Conditions conditions = new Conditions();
   final MergeCondition size_condition = region -> region.getSizeInBytes() < threshold_bytes;
@@ -100,9 +111,10 @@ public class MergeTable extends AbstractHBaseToy {
   protected void buildToy(ToyConfiguration configuration) throws Exception {
     super.buildToy(configuration);
     admin = connection.getAdmin();
-    int start = merge_table_url.value().indexOf("=") + 1;
-    table = TableName.valueOf(merge_table_url.value().substring(start));
     logic = (LOGIC) condition_logic.value();
+     pool = Executors.newFixedThreadPool(thread_pool_size.value());
+    table = TableName.valueOf(merge_table_url.value().substring(merge_table_url.value().indexOf("=") + 1));
+
 
     String type = merge_condition.value();
     if (type.equalsIgnoreCase("size")) {
@@ -139,13 +151,17 @@ public class MergeTable extends AbstractHBaseToy {
         RegionInfo region_A = table_info.getRegionAtIndex(index_a);
         RegionInfo region_B = table_info.getRegionAtIndex(index_b);
         if (conditions.shouldMerge(logic, region_A, region_B)) {
-          HRegionInfo A_region = regions.get(index_a);
-          HRegionInfo B_region = regions.get(index_b);
-          LOG.info("Merging region " + Bytes.toStringBinary(A_region.getEncodedNameAsBytes()) + " and " + Bytes.toStringBinary(B_region.getEncodedNameAsBytes()));
-          admin.mergeRegions(
-              A_region.getEncodedNameAsBytes(),
-              B_region.getEncodedNameAsBytes(),
-              false);
+          final HRegionInfo A_region = regions.get(index_a);
+          final HRegionInfo B_region = regions.get(index_b);
+          pool.submit(() -> {
+            LOG.info("Merging region " + Bytes.toStringBinary(A_region.getEncodedNameAsBytes()) + " and " + Bytes.toStringBinary(B_region.getEncodedNameAsBytes()));
+            try {
+              admin.mergeRegions(A_region.getEncodedNameAsBytes(), B_region.getEncodedNameAsBytes(), false);
+            } catch (IOException e) {
+              LOG.warning("Error when merging regions " + Bytes.toStringBinary(A_region.getEncodedNameAsBytes()) + " and " + Bytes.toStringBinary(B_region.getEncodedNameAsBytes()) +
+                          ", skipping, error: " + e.getMessage());
+            }
+          });
         }
       }
       LOG.info("Sleeping for " + runs_interval_sec.value() + " seconds to wait for CatalogJanitor cleaning merged regions.");
