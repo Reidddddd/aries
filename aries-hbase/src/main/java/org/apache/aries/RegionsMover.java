@@ -25,13 +25,9 @@ import org.apache.aries.common.StringArrayParameter;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.HConnectionManager;
-import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
@@ -53,10 +49,6 @@ public class RegionsMover extends AbstractHBaseToy {
           .setDescription("MOVE: move regions from A to B. RELOAD: move regions from A to B, then from B to A.").opt();
   private final Parameter<Boolean> batch_move =
       BoolParameter.newBuilder("rm.batch_move", false).setDescription("By default move is one pair by one pair, set true to run in batch. This only applies to RELOAD").opt();
-  private final Parameter<Boolean> hbase_version2 =
-      BoolParameter.newBuilder("rm.hbase_version2", false)
-                   .setDescription("Whether the tables are in hbase version2 cluster, false by default.")
-                   .opt();
 
   enum MODE {
     MOVE, RELOAD
@@ -72,7 +64,6 @@ public class RegionsMover extends AbstractHBaseToy {
     requisites.add(thread_pool_size);
     requisites.add(move_or_reload);
     requisites.add(batch_move);
-    requisites.add(hbase_version2);
   }
 
   @Override protected void exampleConfiguration() {
@@ -81,7 +72,6 @@ public class RegionsMover extends AbstractHBaseToy {
     example(thread_pool_size.key(), "8");
     example(move_or_reload.key(), "RELOAD");
     example(batch_move.key(), "false");
-    example(hbase_version2.key(), "false");
   }
 
   Admin admin;
@@ -114,7 +104,7 @@ public class RegionsMover extends AbstractHBaseToy {
         for (int i = 0; i < size; i++) {
           source = findServer(source_servers.value()[i]);
           target = findServer(target_servers.value()[i]);
-          regions = getOnlineRegionsOn(source);
+          regions = admin.getOnlineRegions(source);
           LOG.info("There are " + regions.size() + " regions on " + source);
           unloadRegionsTo(regions, target);
         }
@@ -125,7 +115,7 @@ public class RegionsMover extends AbstractHBaseToy {
           for (int i = 0; i < size; i++) {
             source = findServer(source_servers.value()[i]);
             target = findServer(target_servers.value()[i]);
-            regions = getOnlineRegionsOn(source);
+            regions = admin.getOnlineRegions(source);
             LOG.info("There are " + regions.size() + " regions on " + source);
             unloadRegionsTo(regions, target);
           }
@@ -133,14 +123,14 @@ public class RegionsMover extends AbstractHBaseToy {
           for (int i = 0; i < size; i++) {
             source = findServer(source_servers.value()[i]);
             target = findServer(target_servers.value()[i]);
-            regions = getOnlineRegionsOn(target);
+            regions = admin.getOnlineRegions(target);
             reloadRegionsTo(regions, source);
           }
         } else {
           for (int i = 0; i < size; i++) {
             source = findServer(source_servers.value()[i]);
             target = findServer(target_servers.value()[i]);
-            regions = getOnlineRegionsOn(source);
+            regions = admin.getOnlineRegions(source);
             LOG.info("There are " + regions.size() + " regions on " + source);
             unloadRegionsTo(regions, target);
             promptForConfirm();
@@ -201,32 +191,6 @@ public class RegionsMover extends AbstractHBaseToy {
       });
     }
     while (moved.get() != 0);
-  }
-
-  private List<HRegionInfo> getOnlineRegionsOn(ServerName server) throws IOException {
-    return hbase_version2.value() ? reflectionInvoke(admin, "getOnlineRegions", server)
-                                  : ProtobufUtil.getOnlineRegions(HConnectionManager.getConnection(connection.getConfiguration()).getAdmin(server));
-  }
-
-  private List<HRegionInfo> reflectionInvoke(Admin obj, String methodName, Object... params) {
-    Method m = null;
-    try {
-      m = obj.getClass().getMethod(methodName, ServerName.class);
-      m.setAccessible(true);
-      return (List<HRegionInfo>) m.invoke(obj, params);
-    } catch (NoSuchMethodException e) {
-      throw new UnsupportedOperationException("Cannot find specified method " + methodName, e);
-    } catch (IllegalAccessException e) {
-      throw new UnsupportedOperationException("Unable to access specified method " + methodName, e);
-    } catch (IllegalArgumentException e) {
-      throw new UnsupportedOperationException("Illegal arguments supplied for method " + methodName, e);
-    } catch (InvocationTargetException e) {
-      throw new UnsupportedOperationException("Method threw an exception for " + methodName, e);
-    } finally {
-      if (m != null) {
-        m.setAccessible(false);
-      }
-    }
   }
 
   @Override protected void destroyToy() throws Exception {
