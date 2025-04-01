@@ -22,12 +22,17 @@ import org.apache.aries.common.IntParameter;
 import org.apache.aries.common.Parameter;
 import org.apache.aries.common.RETURN_CODE;
 import org.apache.aries.common.StringArrayParameter;
+import org.apache.aries.common.ToyUtils;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
@@ -46,12 +51,12 @@ public class RegionsMover extends AbstractHBaseToy {
       IntParameter.newBuilder("rm.threads_for_move_regions").setDefaultValue(8).setDescription("Number of threads for moving regions.").opt();
   private final Parameter<Enum> move_or_reload =
       EnumParameter.newBuilder("rm.move_or_reload", MODE.RELOAD, MODE.class)
-          .setDescription("MOVE: move regions from A to B. RELOAD: move regions from A to B, then from B to A.").opt();
+          .setDescription("MOVE: move regions from A to B. RELOAD: move regions from A to B, then from B to A. OFFLOAD: offload all regions from A").opt();
   private final Parameter<Boolean> batch_move =
       BoolParameter.newBuilder("rm.batch_move", false).setDescription("By default move is one pair by one pair, set true to run in batch. This only applies to RELOAD").opt();
 
   enum MODE {
-    MOVE, RELOAD
+    MOVE, RELOAD, OFFLOAD
   }
 
   @Override protected String getParameterPrefix() {
@@ -77,19 +82,37 @@ public class RegionsMover extends AbstractHBaseToy {
   Admin admin;
   ExecutorService pool;
   MODE mode;
+  boolean usingHBase2;
 
   @Override protected void buildToy(ToyConfiguration configuration) throws Exception {
     super.buildToy(configuration);
     admin = connection.getAdmin();
     pool = Executors.newFixedThreadPool(thread_pool_size.value());
-    mode = (MODE) move_or_reload.value();
-    LOG.info("Using mode: " + mode.name());
   }
 
   @Override
   protected void midCheck() {
-    if (target_servers.value().length != source_servers.value().length) {
-      throw new IllegalArgumentException("Target servers size should be equal to temp servers size");
+    mode = (MODE) move_or_reload.value();
+    LOG.info("Using mode: " + mode);
+    usingHBase2 = System.getenv("HBASE_HOME").contains("hbase-2");
+    LOG.info("Using HBase version " + (usingHBase2 ? 2 : 1));
+
+    if (!usingHBase2) {
+      if (target_servers.value().length != source_servers.value().length) {
+        throw new IllegalArgumentException("Target servers size should be equal to temp servers size");
+      }
+      if (mode == MODE.OFFLOAD) {
+        throw new IllegalArgumentException("OFFLOAD is not supported in HBase 1. Please use MOVE or RELOAD");
+      }
+    }
+
+    if (usingHBase2) {
+      if (target_servers.value().length > 0) {
+        LOG.warning("Target servers are no longer needed when running in HBase 2.");
+      }
+      if (mode != MODE.OFFLOAD) {
+        throw new IllegalArgumentException("MOVE and RELOAD are no longer supported in HBase 2. Please use OFFLOAD");
+      }
     }
   }
 
@@ -140,6 +163,23 @@ public class RegionsMover extends AbstractHBaseToy {
           }
         }
         break;
+      }
+      case OFFLOAD: {
+        List<ServerName> offlineServers = new ArrayList<ServerName>(source_servers.value().length);
+        for (String server : source_servers.value()) {
+          offlineServers.add(findServer(server));
+        }
+        reflectionInvoke(admin, "decommissionRegionServers",
+                         new Class[] { List.class, boolean.class }, offlineServers, true);
+
+        LOG.info("Offloading regions asynchronously. Please check progress on WebUI.");
+        LOG.info("This program will exit in 1 min");
+        Thread.sleep(ToyUtils.getTimeoutInMilliSeconds(60));
+
+        for (ServerName server : offlineServers) {
+          reflectionInvoke(admin, "recommissionRegionServer",
+                           new Class[] { ServerName.class, List.class }, server, Collections.emptyList());
+        }
       }
     }
     return RETURN_CODE.SUCCESS.code();
@@ -198,4 +238,32 @@ public class RegionsMover extends AbstractHBaseToy {
     super.destroyToy();
   }
 
+  private List<HRegionInfo> reflectionInvoke(Admin obj,String methodName, Class[] clazzTypes, Object... params) {
+    Method m = null;
+    try {
+      m = obj.getClass().getMethod(methodName, clazzTypes);
+      m.setAccessible(true);
+      return (List<HRegionInfo>) m.invoke(obj, params);
+    } catch (NoSuchMethodException e) {
+      throw new UnsupportedOperationException("Cannot find specified method " + methodName, e);
+    } catch (IllegalAccessException e) {
+      throw new UnsupportedOperationException("Unable to access specified method " + methodName, e);
+    } catch (IllegalArgumentException e) {
+      throw new UnsupportedOperationException("Illegal arguments supplied for method " + methodName, e);
+    } catch (InvocationTargetException e) {
+      throw new UnsupportedOperationException("Method threw an exception for " + methodName, e);
+    } finally {
+      if (m != null) {
+        m.setAccessible(false);
+      }
+    }
+  }
+
+  private Class<?>[] getParameterTypes(Object[] params) {
+    Class<?>[] parameterTypes = new Class<?>[params.length];
+    for (int i = 0; i < params.length; i++) {
+      parameterTypes[i] = params[i].getClass();
+    }
+    return parameterTypes;
+  }
 }
